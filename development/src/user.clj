@@ -20,8 +20,11 @@
    [poly.web.user.interface :as user]))
 
 (integrant.repl/set-prep! (fn []
-                            (let [sql-cfg (cfg/config "sql/config.edn" {:profile :dev})]
-                              sql-cfg)))
+                            (let [configs (map (fn [comp-cfg]
+                                                 (cfg/config comp-cfg {:profile :dev}))
+                                               ["sql/config.edn"
+                                                "user/config.edn"])]
+                              (apply merge configs))))
 
 ;; Enable instrumentation for all registered `spec`s
 (st/instrument)
