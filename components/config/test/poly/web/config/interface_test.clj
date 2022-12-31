@@ -1,6 +1,6 @@
 (ns poly.web.config.interface-test
   (:require
-   [clojure.test :as test :refer :all]
+   [clojure.test :as test :refer [deftest is]]
    [poly.web.config.interface :as config]))
 
 (deftest dev-profile

@@ -14,6 +14,20 @@
   [cfg opts]
   (aero/read-config (io/resource cfg) opts))
 
+(def ^:private system
+  "Reference to the Integrant system dependencies (initialized on app startup)."
+  (atom {}))
+
+(defn env
+  [key]
+  (get @system key))
+
 (defn init
-  [cfg] ; TODO: add spec
-  (ig/init cfg))
+  [cfg]
+  (reset! system (ig/init cfg)))
+
+(defn halt!
+  []
+  (when @system
+    (ig/halt! @system))
+  (reset! system nil))
