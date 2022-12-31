@@ -28,3 +28,7 @@ You can also get in touch with the Polylith Team on [Slack](https://clojurians.s
 	- Other components import this via `(require '[poly.web.spec.interface :as spec])`
 - If a component's spec is required by another component, that spec is defined like `components/sql/src/poly.web/sql/interface/spec.clj`
 	- Other components import this via `(require '[poly.web.sql.interface.spec :as sql-spec])`
+
+# License
+
+Distributed under the [MIT License](https://opensource.org/licenses/MIT), the same as the [Clojure Polylith RealWorld Example App](https://github.com/furkan3ayraktar/clojure-polylith-realworld-example-app) project.
