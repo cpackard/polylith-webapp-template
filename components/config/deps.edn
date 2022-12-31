@@ -1,0 +1,5 @@
+{:paths ["src" "resources"]
+ :deps {integrant/integrant {:mvn/version "0.8.0"}
+        aero/aero {:mvn/version "1.1.6"}}
+ :aliases {:test {:extra-paths ["test"]
+                  :extra-deps {}}}}

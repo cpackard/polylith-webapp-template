@@ -1,0 +1,17 @@
+{:deps {org.clojure/clojure          {:mvn/version "1.10.1"}
+        org.clojure/tools.deps.alpha {:mvn/version "0.12.985"}
+        ;; Components
+        poly/sql                     {:local/root "components/sql"}
+        poly/logging                 {:local/root "components/logging"}
+        poly/config                  {:local/root "components/config"}
+
+        ;; Bases
+        poly/rest-api {:local/root "bases/rest-api"}}
+
+ :aliases {:test {:extra-paths []
+                  :extra-deps  {}}
+
+           :uberjar {:extra-deps {uberdeps/uberdeps {:mvn/version "0.1.10"}}
+                     :main-opts  ["-m" "uberdeps.uberjar"
+                                  "--aliases" "aot"
+                                  "--main-class" "poly.web.rest_api.main"]}}}

@@ -1,0 +1,50 @@
+{:aliases {:dev {:extra-paths ["development/src"
+                               ;; Components
+                               "components/sql/src"
+                               "components/sql/resources"
+                               "components/logging/src"
+                               "components/logging/resources"
+                               "components/config/src"
+                               "components/config/resources"
+                               ;; Bases
+                               "bases/rest-api/src"
+                               "bases/rest-api/resources"]
+                 :extra-deps  {org.clojure/clojure {:mvn/version "1.11.1"}
+                               ;; Convenience functions for REPL development with Integrant
+                               integrant/repl      {:mvn/version "0.3.2"}
+                               expound/expound     {:mvn/version "0.9.0"}
+
+                               ;; Components
+                               poly/sql     {:local/root "components/sql"}
+                               poly/logging {:local/root "components/logging"}
+                               poly/config  {:local/root "components/config"}
+
+                               ;; Bases
+                               poly/rest-api {:local/root "bases/rest-api"}
+
+                               ;; Formatting
+                               cljfmt/cljfmt {:mvn/version "0.9.0"}}}
+
+           :test {:extra-paths ["components/sql/test"
+                                "components/logging/test"
+                                "components/config/test"]}
+
+           :migrate {:extra-paths ["components/sql/src"
+                                   "components/sql/resources"
+                                   "components/logging/src"
+                                   "components/logging/resources"
+                                   "components/config/src"
+                                   "components/config/resources"]
+                     :extra-deps  {com.github.paulbutcher/clj-migratus {:git/tag "v1.0.3"
+                                                                        :git/sha "46a3ac1"}
+                                   poly/sql                            {:local/root "components/sql"}
+                                   poly/logging                        {:local/root "components/logging"}
+                                   poly/config                         {:local/root "components/config"}}
+                     :jvm-opts    ["-Dmigratus.config.path=poly/web/sql/migratus.clj"]
+                     :main-opts   ["-m" "clj-migratus"]}
+
+           :poly {:main-opts  ["-m" "polylith.clj.core.poly-cli.core"]
+                  :extra-deps {polyfy/polylith
+                               {:git/url   "https://github.com/polyfy/polylith"
+                                :sha       "f15e08ae01ee29d59f7eb1e80f52be6bc19f8eff"
+                                :deps/root "projects/poly"}}}}}

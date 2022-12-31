@@ -1,0 +1,8 @@
+{:paths ["src" "resources"]
+ :deps {io.pedestal/pedestal.log {:mvn/version "0.5.11-snapshot-1"}
+        ch.qos.logback/logback-classic {:mvn/version "1.4.4" :exclusions [org.slf4j/slf4j-api]}
+        org.slf4j/jul-to-slf4j {:mvn/version "2.0.3"}
+        org.slf4j/jcl-over-slf4j {:mvn/version "2.0.3"}
+        org.slf4j/log4j-over-slf4j {:mvn/version "2.0.3"}}
+ :aliases {:test {:extra-paths ["test"]
+                  :extra-deps {}}}}
