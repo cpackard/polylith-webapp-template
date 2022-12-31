@@ -6,6 +6,9 @@
                                "components/logging/resources"
                                "components/config/src"
                                "components/config/resources"
+                               "components/user/src"
+                               "components/user/resources"
+
                                ;; Bases
                                "bases/rest-api/src"
                                "bases/rest-api/resources"]
@@ -18,8 +21,8 @@
                                poly/sql     {:local/root "components/sql"}
                                poly/logging {:local/root "components/logging"}
                                poly/config  {:local/root "components/config"}
-
-                               ;; Bases
+                               poly/user  {:local/root "components/user"}
+;; Bases
                                poly/rest-api {:local/root "bases/rest-api"}
 
                                ;; Formatting
@@ -27,7 +30,8 @@
 
            :test {:extra-paths ["components/sql/test"
                                 "components/logging/test"
-                                "components/config/test"]}
+                                "components/config/test"
+                                "components/user/test"]}
 
            :migrate {:extra-paths ["components/sql/src"
                                    "components/sql/resources"

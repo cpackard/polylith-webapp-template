@@ -15,7 +15,9 @@
    [poly.web.sql.core :as sql-c]
    [poly.web.sql.interface :as sql]
    [poly.web.sql.interface-test]
-   [poly.web.sql.spec :as sql-s]))
+   [poly.web.sql.spec :as sql-s]
+   [poly.web.user.core :as user-c]
+   [poly.web.user.interface :as user]))
 
 (integrant.repl/set-prep! (fn []
                             (let [sql-cfg (cfg/config "sql/config.edn" {:profile :dev})]
