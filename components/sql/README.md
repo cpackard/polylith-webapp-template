@@ -21,7 +21,7 @@ This project assumes you have a [PostgreSQL](https://www.postgresql.org/) instan
 - user: `pguser`
 - password `pgpass`
 
-See [sql/config.edn](components/sql/resources/sql/config.edn) for full settings.
+See [sql/config.edn](resources/sql/config.edn) for full settings.
 
 ## Migrations
 
@@ -29,7 +29,7 @@ This component currently uses [migratus](https://github.com/yogthos/migratus) as
 
 ### Invoking Commands
 
-Migration commands can be invoked either from a connected REPL (*recommended* - see [migratus.clj](components/sql/src/poly.web/sql/migratus.clj:17:0) for full examples of each command) or from the CLI at the root of the repo:
+Migration commands can be invoked either from a connected REPL (*recommended* - see [migratus.clj](src/poly/web/sql/migratus.clj) for full examples of each command) or from the CLI at the root of the repo:
 
 ```shell
 clj -M:migrate <COMMAND>
@@ -43,7 +43,7 @@ See the [migratus usage docs](https://github.com/yogthos/migratus#usage) for ful
 
 #### Generate the migration file
 
-This will create an empty `.edn` file in the folder specified by the `:migrations-dir` key in the [migratus.clj](components/sql/src/poly.web/sql/migratus.clj:9:3) file. Here we give an example name "create-users-table" for the migration, so the full name of the generated file will look like '20111202091200-add-users.edn'.
+This will create an empty `.edn` file in the folder specified by the `:migrations-dir` key in the [migratus.clj](src/poly/web/sql/migratus.clj) file. Here we give an example name "create-users-table" for the migration, so the full name of the generated file will look like '20111202091200-add-users.edn'.
 
 ```clojure
 (require '[migratus.core :as migratus])
