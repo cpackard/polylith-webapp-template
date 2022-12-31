@@ -13,3 +13,15 @@
 (defn with-columns
   [& args]
   (apply helpers/with-columns args))
+
+(defn select
+  [& exprs]
+  (apply helpers/select exprs))
+
+(defn from
+  [& tables]
+  (apply helpers/from tables))
+
+(defn where
+  [& exprs]
+  (apply helpers/where exprs))
