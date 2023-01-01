@@ -28,27 +28,26 @@
   (.close (:connectable datasource)))
 
 (s/fdef query
-  :args (s/cat :ds spec/connectable
-               :query map?))
+  :args (s/cat :query map?
+               :ds spec/connectable))
 
 (defn query
   "Run the given SQL query string and query params"
-  [ds sql-query & opts]
+  [sql-query ds & opts]
   (jdbc-sql/query ds
                   (sql/format sql-query)
-                  (merge {:timeout 2
-                          :qualifier-fn (fn [_] str "projects")}
+                  (merge {:timeout 2}
                          opts)))
 
 (s/fdef query-one
-  :args (s/cat :ds spec/connectable
-               :query map?)
+  :args (s/cat :query map?
+               :ds spec/connectable)
   :ret (complement sequential?))
 
 (defn query-one
   "Same as the `query` function, but only returns the first matching row."
-  [ds sql-query & opts]
-  (first (apply query ds sql-query opts)))
+  [sql-query ds & opts]
+  (first (apply query sql-query ds opts)))
 
 (s/fdef transaction
   :args (s/cat :ds ::spec/connectable

@@ -57,7 +57,7 @@
     (is (= 1 (count (migratus/pending-list config))))
 
     (migratus/migrate config)
-    (is (= true (:exists (sql/query-one ds (table-exists? "users")))))
+    (is (= true (:exists (sql/query-one (table-exists? "users") ds))))
 
     (migratus/rollback config)
-    (is (= false (:exists (sql/query-one ds (table-exists? "users")))))))
+    (is (= false (:exists (sql/query-one (table-exists? "users") ds))))))
