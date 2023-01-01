@@ -23,8 +23,8 @@
   (core/init-pool db-spec))
 
 (defmethod ig/halt-key! ::db-pool
-  [_ datasource]
-  (core/close-pool datasource))
+  [_ _]
+  (core/close-pool))
 
 (s/fdef init-pool
   :args (s/cat :db-spec ::sql-spec/db-spec))
@@ -34,34 +34,41 @@
   [db-spec]
   (core/init-pool db-spec))
 
-(s/fdef close-pool
-  :args (s/cat :datasource spec/connectable))
-
 (defn close-pool
   "Close the given database connection pool."
-  [ds]
-  [core/close-pool ds])
+  []
+  (core/close-pool))
 
 (s/fdef query
   :args (s/cat :query map?
-               :ds spec/connectable))
+               :ds (s/? spec/connectable)
+               :opts (s/? map?)))
 
 (defn query
   "Execute the given SQL query with optional arguments `opts`."
-  [ds sql-query & opts]
-  (apply core/query ds sql-query opts))
+  ([query]
+   (core/query query (core/ds) {}))
+  ([query ds]
+   (core/query query ds {}))
+  ([query ds opts]
+   (core/query query ds opts)))
 
 (s/fdef query-one
   :args (s/cat :query map?
-               :ds spec/connectable)
+               :ds (s/? spec/connectable)
+               :opts (s/? map?))
   :ret (complement sequential?))
 
 (defn query-one
   "Execute the given SQL query with optional arguments `opts`.
 
   Returns only the first result, if any."
-  [ds sql-query & opts]
-  (apply core/query-one ds sql-query opts))
+  ([query]
+   (core/query-one query (core/ds) {}))
+  ([query ds]
+   (core/query-one query ds {}))
+  ([query ds opts]
+   (core/query-one query ds opts)))
 
 (s/fdef transaction
   :args (s/cat :ds ::spec/connectable

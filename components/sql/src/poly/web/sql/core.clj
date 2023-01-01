@@ -8,20 +8,32 @@
   (:import
    (com.zaxxer.hikari HikariDataSource)))
 
+(def ^:private db-pool
+  "Private reference to the DB connection pool."
+  (atom nil))
+
+(defn ds
+  "Helper function to access the DB connection pool"
+  []
+  @db-pool)
 
 (defn init-pool
   [db-spec]
+  (when (some? @db-pool)
+    @db-pool)
   (let [ds (connection/->pool HikariDataSource db-spec)]
-    (jdbc/with-options ds {:label-fn (:label-fn jdbc/snake-kebab-opts)})))
+    (reset! db-pool
+            (jdbc/with-options ds {:label-fn (:label-fn jdbc/snake-kebab-opts)}))))
 
 (defn close-pool
   "Close the database pool `datasource`."
-  [datasource]
-  (.close (:connectable datasource)))
+  []
+  (.close (:connectable @db-pool))
+  (reset! db-pool nil))
 
 (defn query
   "Run the given SQL query string and query params"
-  [sql-query ds & opts]
+  [sql-query ds opts]
   (jdbc-sql/query ds
                   (sql/format sql-query)
                   (merge {:timeout 2}
@@ -29,8 +41,8 @@
 
 (defn query-one
   "Same as the `query` function, but only returns the first matching row."
-  [sql-query ds & opts]
-  (first (apply query sql-query ds opts)))
+  [sql-query ds opts]
+  (first (query sql-query ds opts)))
 
 (defn transaction
   [ds queries]
