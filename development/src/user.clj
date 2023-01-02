@@ -1,10 +1,15 @@
 #_{:clj-kondo/ignore [:unused-namespace :unused-referred-var]}
 (ns user
   (:require
+   [clojure.spec.alpha :as s]
    [clojure.spec.test.alpha :as st]
+   [expound.alpha :as expound]
    [integrant.core :as ig]
    [integrant.repl :refer [clear go halt init prep reset reset-all]]
    [integrant.repl.state :refer [system]]
+   [poly.web.auth.core :as auth-c]
+   [poly.web.auth.interface :as auth]
+   [poly.web.auth.spec :as auth-s]
    [poly.web.config.core :as cfg-c]
    [poly.web.config.interface :as cfg]
    [poly.web.config.interface-test]
@@ -12,6 +17,8 @@
    [poly.web.logging.core :as log-c]
    [poly.web.logging.interface :as log]
    [poly.web.logging.interface-test]
+   [poly.web.spec.core :as spec-c]
+   [poly.web.spec.interface :as spec]
    [poly.web.sql.core :as sql-c]
    [poly.web.sql.interface :as sql]
    [poly.web.sql.interface-test]
@@ -23,14 +30,20 @@
                             (let [configs (map (fn [comp-cfg]
                                                  (cfg/config comp-cfg {:profile :dev}))
                                                ["sql/config.edn"
-                                                "user/config.edn"])]
+                                                "auth/config.edn"])]
                               (apply merge configs))))
 
-;; Enable instrumentation for all registered `spec`s
-(st/instrument)
+(defn setup
+  []
+  ;; Human-readable spec errors
+  ;; see the docs for details: https://github.com/bhb/expound/blob/master/doc/faq.md#how-do-i-use-expound-to-print-all-spec-errors
+  (set! s/*explain-out* expound/printer)
 
-;; start Integrant system
-(go)
+  ;; Enable instrumentation for all registered `spec`s
+  (st/instrument)
+
+  ;; start Integrant system
+  (go))
 
 (defn get-ds
   "Retrieve the initialized connection pool from Integrant."
