@@ -8,30 +8,41 @@
                                "components/config/resources"
                                "components/user/src"
                                "components/user/resources"
+                               "components/auth/src"
+                               "components/auth/resources"
+                               "components/spec/src"
+                               "components/spec/resources"
 
                                ;; Bases
                                "bases/rest-api/src"
                                "bases/rest-api/resources"]
-                 :extra-deps  {org.clojure/clojure {:mvn/version "1.11.1"}
-                               ;; Convenience functions for REPL development with Integrant
-                               integrant/repl      {:mvn/version "0.3.2"}
-                               expound/expound     {:mvn/version "0.9.0"}
+                 :extra-deps {org.clojure/clojure {:mvn/version "1.11.1"}
+                              ;; Convenience functions for REPL development with Integrant
+                              integrant/repl      {:mvn/version "0.3.2"}
+                              ;;  Human-optimized error messages for clojure.spec
+                              expound/expound     {:mvn/version "0.9.0"}
 
-                               ;; Components
-                               poly/sql     {:local/root "components/sql"}
-                               poly/logging {:local/root "components/logging"}
-                               poly/config  {:local/root "components/config"}
-                               poly/user  {:local/root "components/user"}
-;; Bases
-                               poly/rest-api {:local/root "bases/rest-api"}
+                              ;; Components
+                              poly/sql     {:local/root "components/sql"}
+                              poly/logging {:local/root "components/logging"}
+                              poly/config  {:local/root "components/config"}
+                              poly/user    {:local/root "components/user"}
+                              poly/auth    {:local/root "components/auth"}
+                              poly/spec    {:local/root "components/spec"}
 
-                               ;; Formatting
-                               cljfmt/cljfmt {:mvn/version "0.9.0"}}}
+                              ;; Bases
+                              poly/rest-api {:local/root "bases/rest-api"}
+
+                              ;; Formatting
+                              cljfmt/cljfmt {:mvn/version "0.9.0"}}}
 
            :test {:extra-paths ["components/sql/test"
                                 "components/logging/test"
                                 "components/config/test"
-                                "components/user/test"]}
+                                "components/user/test"
+                                "components/auth/test"
+                                "components/spec/test"]
+                  :extra-deps  {}}
 
            :migrate {:extra-paths ["components/sql/src"
                                    "components/sql/resources"
