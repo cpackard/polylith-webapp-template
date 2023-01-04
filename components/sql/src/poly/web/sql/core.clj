@@ -49,3 +49,8 @@
   (jdbc/with-transaction [tx ds]
     (doseq [query queries]
       (jdbc/execute! tx (sql/format query)))))
+
+(defn create-index
+  "Wrapper function to help with constructing CREATE INDEX queries."
+  [index-name table column]
+  {:create-index [index-name [table column]]})

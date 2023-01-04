@@ -1,14 +1,47 @@
 (ns poly.web.sql.interface.helpers
   (:require
-   [honey.sql.helpers :as helpers]))
+   [honey.sql :as h]
+   [honey.sql.helpers :as helpers]
+   [poly.web.sql.core :as core]))
+
+(h/register-clause! :create-index
+                    (fn [clause x]
+                      (let [[index-name [table column]] x]
+                        [(format "%s %s ON %s(%s)"
+                                 (h/sql-kw clause)
+                                 (h/format-entity index-name)
+                                 (h/format-entity table)
+                                 (h/format-entity column))]))
+
+                    :add-column)
 
 (defn create-table
   [& args]
   (apply helpers/create-table args))
 
+(defn alter-table
+  [& args]
+  (apply helpers/alter-table args))
+
 (defn drop-table
   [& tables]
   (apply helpers/drop-table tables))
+
+(defn create-index
+  [index-name table column]
+  (core/create-index index-name table column))
+
+(defn add-index
+  [& args]
+  (apply helpers/add-index args))
+
+(defn add-column
+  [& args]
+  (apply helpers/add-column args))
+
+(defn drop-column
+  [& args]
+  (apply helpers/drop-column args))
 
 (defn with-columns
   [& args]
