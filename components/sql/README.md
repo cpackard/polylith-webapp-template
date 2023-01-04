@@ -86,7 +86,7 @@ In the below example, the actual file would be `components/user/src/poly.web/use
         table (-> (create-table :users :if-not-exists)
                   (with-columns [[:id :uuid [:not nil] [:primary-key]]
                                  [:name [:varchar 255] [:constraint :users--name] :unique]]))]
-    (sql/query ds table)))
+    (sql/query table ds)))
 
 (s/fdef migrate-down
   :args (s/cat :config ::spec/migratus-config))
@@ -94,7 +94,7 @@ In the below example, the actual file would be `components/user/src/poly.web/use
 (defn migrate-down
   [config]
   (let [ds (:db config)]
-    (sql/query ds (drop-table :users))))
+    (sql/query (drop-table :users) ds)))
 
 (comment
   (do
