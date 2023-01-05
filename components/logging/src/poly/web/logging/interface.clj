@@ -3,13 +3,13 @@
    [poly.web.logging.core :as core]))
 
 (defmacro info
-  [msg]
-  `(core/info ~msg))
+  [& args]
+  `(core/info ~@args))
 
 (defmacro warn
-  [msg]
-  `(core/warn ~msg))
+  [& args]
+  `(core/warn ~@args))
 
 (defmacro error
-  [msg]
-  `(core/error ~msg))
+  [& args]
+  `(core/error ~@args))
