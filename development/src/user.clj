@@ -22,6 +22,7 @@
    [poly.web.sql.core :as sql-c]
    [poly.web.sql.interface :as sql]
    [poly.web.sql.interface-test]
+   [poly.web.sql.interface.helpers :as sql-h]
    [poly.web.sql.spec :as sql-s]
    [poly.web.user.core :as user-c]
    [poly.web.user.interface :as user]))
