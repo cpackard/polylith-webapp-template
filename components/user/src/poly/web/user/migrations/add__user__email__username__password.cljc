@@ -33,12 +33,12 @@
 
 (defn migrate-down
   [config]
-  (let [ds (:db config)
-        query (-> (alter-table :users)
-                  (drop-column :password)
-                  (drop-column :email)
-                  (drop-column :username))]
-    (sql/query query ds)))
+  (let [ds             (:db config)
+        drop-columns   (-> (alter-table :users
+                                        (drop-column :password)
+                                        (drop-column :email)
+                                        (drop-column :username)))]
+    (sql/query drop-columns ds)))
 
 (comment
   (do
