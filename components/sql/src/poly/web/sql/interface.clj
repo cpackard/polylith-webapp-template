@@ -70,6 +70,18 @@
   ([query ds opts]
    (core/query-one query ds opts)))
 
+(s/fdef insert!
+  :args (s/cat :table keyword?
+               :row map?
+               :ds (s/? ::spec/connectable))
+  :ret map?)
+
+(defn insert!
+  ([table row]
+   (insert! table row (core/ds)))
+  ([table row ds]
+   (core/insert! table row ds)))
+
 (s/fdef transaction
   :args (s/cat :ds ::spec/connectable
                :queries (s/+ map?)))

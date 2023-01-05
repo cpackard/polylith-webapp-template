@@ -44,6 +44,10 @@
   [sql-query ds opts]
   (first (query sql-query ds opts)))
 
+(defn insert!
+  [table row ds]
+  (jdbc-sql/insert! ds table row))
+
 (defn transaction
   [ds queries]
   (jdbc/with-transaction [tx ds]
