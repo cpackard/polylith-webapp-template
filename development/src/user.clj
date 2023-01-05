@@ -2,37 +2,54 @@
 (ns user
   (:require
    [clojure.spec.alpha :as s]
+   [clojure.spec.gen.alpha :as gen]
    [clojure.spec.test.alpha :as st]
    [expound.alpha :as expound]
    [integrant.core :as ig]
    [integrant.repl :refer [clear go halt init prep reset reset-all]]
    [integrant.repl.state :refer [system]]
-   [poly.web.auth.core :as auth-c]
-   [poly.web.auth.interface :as auth]
-   [poly.web.auth.spec :as auth-s]
-   [poly.web.config.core :as cfg-c]
-   [poly.web.config.interface :as cfg]
-   [poly.web.config.interface-test]
-   [poly.web.config.spec :as cfg-s]
-   [poly.web.logging.core :as log-c]
-   [poly.web.logging.interface :as log]
-   [poly.web.logging.interface-test]
-   [poly.web.spec.core :as spec-c]
-   [poly.web.spec.interface :as spec]
-   [poly.web.sql.core :as sql-c]
-   [poly.web.sql.interface :as sql]
-   [poly.web.sql.interface-test]
-   [poly.web.sql.interface.helpers :as sql-h]
-   [poly.web.sql.spec :as sql-s]
-   [poly.web.user.core :as user-c]
-   [poly.web.user.interface :as user]))
+   [poly.web.auth
+    [core :as auth-core]
+    [interface :as auth]]
+   [poly.web.auth.interface
+    [spec :as auth-spec]]
+   [poly.web.config
+    [core :as cfg-core]
+    [interface :as cfg]
+    [spec :as cfg-sp]]
+   [poly.web.logging
+    [core :as log-core]
+    [interface :as log]]
+   [poly.web.spec
+    [interface :as spec]
+    [core :as spec-core]]
+   [poly.web.sql
+    [core :as sql-core]
+    [interface :as sql]
+    [migratus :as sql-mig]
+    [spec :as sql-sp]]
+   [poly.web.sql.interface
+    [helpers :as sql-helpers]
+    [spec :as sql-spec]]
+   [poly.web.user
+    [core :as user-core]
+    [interface :as user]
+    [store :as user-store]]
+   [poly.web.user.interface
+    [spec :as user-spec]]))
 
-(integrant.repl/set-prep! (fn []
-                            (let [configs (map (fn [comp-cfg]
-                                                 (cfg/config comp-cfg {:profile :dev}))
-                                               ["sql/config.edn"
-                                                "auth/config.edn"])]
-                              (apply merge configs))))
+(def sys-cfg (let [configs (map (fn [comp-cfg]
+                                  (cfg/config comp-cfg {:profile :dev}))
+                                ["sql/config.edn"
+                                 "auth/config.edn"])]
+               (apply merge configs)))
+
+(def ^:private sys
+  "reference to initialized dependency state"
+  (atom nil))
+
+(integrant.repl/set-prep!
+ (fn [] sys-cfg))
 
 (defn setup
   []
@@ -41,10 +58,16 @@
   (set! s/*explain-out* expound/printer)
 
   ;; Enable instrumentation for all registered `spec`s
+  (st/unstrument)
   (st/instrument)
 
   ;; start Integrant system
-  (go))
+
+  (when @sys
+    (cfg/halt! @sys))
+  (reset! sys (cfg/init sys-cfg))
+  ;(go)
+  )
 
 (defn get-ds
   "Retrieve the initialized connection pool from Integrant."
