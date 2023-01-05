@@ -31,6 +31,10 @@
   [index-name table column]
   (core/create-index index-name table column))
 
+(defn drop-index
+  [index]
+  (helpers/drop-index index))
+
 (defn add-index
   [& args]
   (apply helpers/add-index args))
