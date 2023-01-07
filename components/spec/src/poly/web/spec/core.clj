@@ -12,4 +12,4 @@
               #(s/gen #{"user-1@example.com" "jwow824@yahoo.com" "aubp@ca.gov"})))
 
 (def password? (s/and string?
-                      #(>= (count %) 8)))
+                      #(>= 200 (count %) 8)))
