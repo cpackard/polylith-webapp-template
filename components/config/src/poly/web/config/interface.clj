@@ -6,7 +6,7 @@
 
 (s/fdef config
   :args (s/cat :cfg string?
-               :opts ::spec/opts)
+               :opts (s/? ::spec/opts))
   :ret map?)
 
 (defn config
@@ -35,5 +35,7 @@
 
 (defn halt!
   "Stop the app's running dependencies."
-  []
-  (core/halt!))
+  ([]
+   (core/halt!))
+  ([sys]
+   (core/halt! sys)))

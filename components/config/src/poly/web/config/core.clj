@@ -27,7 +27,9 @@
   (reset! system (ig/init cfg)))
 
 (defn halt!
-  []
-  (when @system
-    (ig/halt! @system))
-  (reset! system nil))
+  ([]
+   (halt! @system))
+  ([sys]
+   (when (identical? @system sys)
+     (reset! system nil))
+   (ig/halt! sys)))
