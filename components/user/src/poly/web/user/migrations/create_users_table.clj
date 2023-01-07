@@ -18,7 +18,7 @@
         table (-> (create-table :users :if-not-exists)
                   (with-columns [[:id :uuid [:not nil] [:primary-key]]
                                  [:name [:varchar 255] [:constraint :users--name] :unique]]))]
-    (sql/query table ds)))
+    (sql/query table {} ds)))
 
 (s/fdef migrate-down
   :args (s/cat :config ::spec/migratus-config))
@@ -26,7 +26,7 @@
 (defn migrate-down
   [config]
   (let [ds (:db config)]
-    (sql/query (drop-table :users) ds)))
+    (sql/query (drop-table :users) {} ds)))
 
 (comment
   (do

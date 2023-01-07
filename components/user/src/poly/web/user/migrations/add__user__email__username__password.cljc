@@ -14,9 +14,8 @@
 (defn migrate-up
   [config]
   (let [ds (:db config)
-
         add-columns    (alter-table :users
-                                    (add-column :password [:varchar 40] [:not nil])
+                                    (add-column :password [:varchar 200] [:not nil])
                                     (add-column :email
                                                 [:varchar 255]
                                                 [:not nil]
@@ -26,7 +25,7 @@
         email-index    (create-index :users--email--index :users :email)
         username-index (create-index :users--username--index :users :username)]
     (doseq [query [add-columns email-index username-index]]
-      (sql/query query ds))))
+      (sql/query query {} ds))))
 
 (s/fdef migrate-down
   :args (s/cat :config ::spec/migratus-config))
@@ -38,7 +37,7 @@
                                         (drop-column :password)
                                         (drop-column :email)
                                         (drop-column :username)))]
-    (sql/query drop-columns ds)))
+    (sql/query drop-columns {} ds)))
 
 (comment
   (do
