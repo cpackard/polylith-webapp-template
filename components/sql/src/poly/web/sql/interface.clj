@@ -23,8 +23,8 @@
   (core/init-pool db-spec))
 
 (defmethod ig/halt-key! ::db-pool
-  [_ _]
-  (core/close-pool))
+  [_ pool]
+  (core/close-pool pool))
 
 (s/fdef init-pool
   :args (s/cat :db-spec ::sql-spec/db-spec))
@@ -34,29 +34,32 @@
   [db-spec]
   (core/init-pool db-spec))
 
+(s/fdef close-pool
+  :args (s/cat :pool ::sql-spec/connectable))
+
 (defn close-pool
   "Close the given database connection pool."
-  []
-  (core/close-pool))
+  [pool]
+  (core/close-pool pool))
 
 (s/fdef query
   :args (s/cat :query map?
-               :ds (s/? spec/connectable)
-               :opts (s/? map?)))
+               :opts (s/? map?)
+               :ds (s/? spec/connectable)))
 
 (defn query
   "Execute the given SQL query with optional arguments `opts`."
   ([query]
-   (core/query query (core/ds) {}))
-  ([query ds]
-   (core/query query ds {}))
-  ([query ds opts]
-   (core/query query ds opts)))
+   (core/query query {} (core/ds)))
+  ([query opts]
+   (core/query query opts (core/ds)))
+  ([query opts ds]
+   (core/query query opts ds)))
 
 (s/fdef query-one
   :args (s/cat :query map?
-               :ds (s/? spec/connectable)
-               :opts (s/? map?))
+               :opts (s/? map?)
+               :ds (s/? spec/connectable))
   :ret (complement sequential?))
 
 (defn query-one
@@ -64,17 +67,17 @@
 
   Returns only the first result, if any."
   ([query]
-   (core/query-one query (core/ds) {}))
-  ([query ds]
-   (core/query-one query ds {}))
-  ([query ds opts]
-   (core/query-one query ds opts)))
+   (core/query-one query {} (core/ds)))
+  ([query opts]
+   (core/query-one query opts (core/ds)))
+  ([query opts ds]
+   (core/query-one query opts ds)))
 
 (s/fdef insert!
   :args (s/cat :table keyword?
                :row map?
-               :ds (s/? ::spec/connectable))
-  :ret map?)
+               :ds (s/? ::sql-spec/connectable))
+  :ret (s/nilable map?))
 
 (defn insert!
   ([table row]
@@ -83,7 +86,7 @@
    (core/insert! table row ds)))
 
 (s/fdef transaction
-  :args (s/cat :ds ::spec/connectable
+  :args (s/cat :ds ::sql-spec/connectable
                :queries (s/+ map?)))
 
 (defn transaction
