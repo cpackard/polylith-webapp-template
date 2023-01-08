@@ -6,25 +6,40 @@
    [expound.alpha :as expound]
    [migratus.core :as migratus]
    [poly.web.config.interface :as config]
+   [poly.web.sql.interface :as sql]
    [poly.web.sql.migratus :as sql-m]
    [poly.web.user.interface :as user]
    [poly.web.user.interface.spec :as user-spec]))
 
 (defn prep-expound-and-system-for-tests
   [f]
-  (let [system (->> (map (fn [comp-cfg]
-                           (config/config comp-cfg {:profile :dev}))
-                         ["sql/config.edn"
-                          "auth/config.edn"])
-                    (apply merge)
-                    (config/init))]
-    (set! s/*explain-out* expound/printer)
-    (migratus/reset sql-m/config)
+  (set! s/*explain-out* expound/printer)
 
-    (f)
+  ; TODO: clean this function up structurally
+  (let [configs      (->> (map (fn [comp-cfg]
+                                 (config/config comp-cfg {:profile :dev}))
+                               ["sql/config.edn"
+                                "auth/config.edn"])
+                          (apply merge))
+        ds (::sql/db-spec configs)
+        test-db-name "user_test"]
 
-    (migratus/reset sql-m/config)
-    (config/halt! system)))
+    (sql/query {:raw (format "CREATE DATABASE %s" test-db-name)} {} ds)
+
+    (let [test-sys (-> (assoc-in configs [::sql/db-spec :dbname] test-db-name)
+                       (config/init))
+          migratus-cfg (assoc-in sql-m/config [:db :dbname] test-db-name)]
+
+      (migratus/migrate migratus-cfg)
+
+      (f)
+
+      (config/halt! test-sys))
+
+    (sql/query
+     {:raw (format "DROP DATABASE IF EXISTS %s WITH (FORCE)" test-db-name)}
+     {}
+     ds)))
 
 (use-fixtures :once prep-expound-and-system-for-tests)
 

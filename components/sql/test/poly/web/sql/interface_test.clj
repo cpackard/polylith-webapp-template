@@ -8,25 +8,34 @@
    [poly.web.sql.interface :as sql]
    [poly.web.sql.migratus :as sql-m]))
 
-(def config (merge sql-m/config
-                   {:migration-dir (re-find #"components.*" (str (io/resource "sql/test-migrations/")))}))
+(def ^:private config
+  "custom `migratus` config - overrides certain properties for testing."
+  (merge sql-m/config
+         {:migration-table-name "test_app_migrations"
+          :migration-dir (re-find #"components.*"
+                                  (str (io/resource "sql/test-migrations/")))}))
 
-(defn migration-files
+(defn- migration-files
   "Return a seq of all migration files."
   []
   (->> (io/file (:migration-dir config))
        (file-seq)
        (filter (fn [f] (string/ends-with? (str f) ".edn")))))
 
+(defn- migration-cleanup!
+  []
+  (let [migration-table (keyword (:migration-table-name config))
+        ds (:db config)]
+    (sql/query {:drop-table [:if-exists migration-table]} {} ds))
+  (doseq [file (migration-files)]
+    (when (string/ends-with? file ".edn")
+      (io/delete-file file true))))
+
 (defn prepare-for-tests
   [f]
-  (let [migration-cleanup (fn []
-                            (doseq [file (migration-files)]
-                              (when (string/ends-with? file ".edn")
-                                (io/delete-file file true))))]
-    (migration-cleanup)
-    (f)
-    (migration-cleanup)))
+  (migration-cleanup!)
+  (f)
+  (migration-cleanup!))
 
 (use-fixtures :each prepare-for-tests)
 
@@ -57,7 +66,7 @@
     (is (= 1 (count (migratus/pending-list config))))
 
     (migratus/migrate config)
-    (is (= true (:exists (sql/query-one (table-exists? "users") {} ds))))
+    (is (= true (:exists (sql/query-one (table-exists? "test_users") {} ds))))
 
     (migratus/rollback config)
-    (is (= false (:exists (sql/query-one (table-exists? "users") {} ds))))))
+    (is (= false (:exists (sql/query-one (table-exists? "test_users") {} ds))))))
