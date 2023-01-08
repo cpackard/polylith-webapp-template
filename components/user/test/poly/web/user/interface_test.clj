@@ -1,4 +1,6 @@
 (ns poly.web.user.interface-test
+  "Tests for the component-level functionality of the `user` brick
+  exposed via `poly.web.user.interface`."
   (:require
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as gen]
@@ -11,37 +13,49 @@
    [poly.web.user.interface :as user]
    [poly.web.user.interface.spec :as user-spec]))
 
-(defn prep-expound-and-system-for-tests
-  [f]
+(defn- configs
+  "Parse all configs requested in `cfgs` into a single merged map."
+  [& cfgs]
+  (let [read-fn (fn [cfg] (config/config cfg {:profile :dev}))]
+    (->> (map read-fn cfgs)
+         (apply merge))))
+
+(defn- prep-expound-and-database
+  "Enable pretty-printing for spec errors and setup/teardown test DB."
+  [db-name f]
   (set! s/*explain-out* expound/printer)
 
-  ; TODO: clean this function up structurally
-  (let [configs      (->> (map (fn [comp-cfg]
-                                 (config/config comp-cfg {:profile :dev}))
-                               ["sql/config.edn"
-                                "auth/config.edn"])
-                          (apply merge))
-        ds (::sql/db-spec configs)
-        test-db-name "user_test"]
+  (let [ds        (-> (configs "sql/config.edn"
+                               "auth/config.edn")
+                      ::sql/db-spec)
+        opts      {}
+        create-db {:raw (format "CREATE DATABASE %s" db-name)}
+        drop-db   {:raw (format "DROP DATABASE IF EXISTS %s WITH (FORCE)" db-name)}]
+    (sql/query create-db opts ds)
 
-    (sql/query {:raw (format "CREATE DATABASE %s" test-db-name)} {} ds)
+    (f)
 
-    (let [test-sys (-> (assoc-in configs [::sql/db-spec :dbname] test-db-name)
-                       (config/init))
-          migratus-cfg (assoc-in sql-m/config [:db :dbname] test-db-name)]
+    (sql/query drop-db opts ds)))
 
-      (migratus/migrate migratus-cfg)
+(defn- reset-migrations
+  "Reset any DB migrations between test runs."
+  [db-name f]
+  (let [test-sys     (->  (configs  "sql/config.edn"
+                                    "auth/config.edn")
+                          (assoc-in [::sql/db-spec :dbname] db-name)
+                          config/init)
+        migratus-cfg (assoc-in sql-m/config [:db :dbname] db-name)]
 
-      (f)
+    (migratus/migrate migratus-cfg)
 
-      (config/halt! test-sys))
+    (f)
 
-    (sql/query
-     {:raw (format "DROP DATABASE IF EXISTS %s WITH (FORCE)" test-db-name)}
-     {}
-     ds)))
+    (config/halt! test-sys)))
 
-(use-fixtures :once prep-expound-and-system-for-tests)
+(let [test-db-name "poly_web_user_interface_test"]
+  (use-fixtures
+    :once (partial prep-expound-and-database test-db-name)
+    :each (partial reset-migrations test-db-name)))
 
 (deftest register!
   (let [register-tests (s/exercise-fn `user/register!)
@@ -65,7 +79,7 @@
       (is (= user (user/user-by-token (::user-spec/token user)))))))
 
 (deftest login
-  (testing "unregistered user"
+  (testing "unregistered user cannot login"
     (let [email    (gen/generate (s/gen ::user-spec/email))
           password (gen/generate (s/gen ::user-spec/password))]
       (is (= {:errors {:email ["Invalid email."]}}
@@ -74,10 +88,10 @@
         email (::user-spec/email user)
         password (::user-spec/password user)]
     (user/register! user)
-    (testing "password mismatch"
+    (testing "existing user cannot login with incorrect password"
       (is (= {:errors {:password ["Invalid password."]}}
              (user/login email "bad-password"))))
-    (testing "valid credentials can login"
+    (testing "existing user can login with correct password"
       (let [visible-user (user/login email password)]
         (is (= email (::user-spec/email visible-user))
             (format "Expected email %s from %s" email visible-user))
