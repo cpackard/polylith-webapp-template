@@ -24,7 +24,8 @@
 (defn login
   [email password]
   (let [user        (store/find-by-email email)
-        validations (some-fn validators/has-email?
+        validations (some-fn (partial validators/valid-user? ::user-spec/user)
+                             validators/has-email?
                              (partial validators/password-match? password)
                              #(->> (::user-spec/username %)
                                    (auth/generate-token email)
@@ -45,7 +46,8 @@
                           ::user-spec/password (auth/encrypt-password password)
                           ::user-spec/id (java.util.UUID/randomUUID))
         new-token  (auth/generate-token email username)
-        validatons (some-fn validators/existing-email?
+        validatons (some-fn (partial validators/valid-user? ::user-spec/new-user)
+                            validators/existing-email?
                             validators/existing-username?
                             validators/user-created?
                             #(user->visible-user % new-token))]

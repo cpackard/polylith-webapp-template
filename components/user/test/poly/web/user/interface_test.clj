@@ -65,6 +65,9 @@
                 {:errors {:other ["Cannot insert user into db."]}}}
               results)
         "Expected at least one auto-generated to collide and trigger an error.")
+    (is (empty? (filter #(get-in % [:errors :request])
+                        results))
+        "Expected only valid users to be generated.")
     (is (not-empty (filter #(s/valid? ::user-spec/visible-user %)
                            results))
         "Expected at least one user to be created successfully.")))
