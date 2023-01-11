@@ -24,8 +24,7 @@
 (defn login
   [email password]
   (let [user        (store/find-by-email email)
-        validations (some-fn (partial validators/valid-user? ::user-spec/user)
-                             validators/has-email?
+        validations (some-fn validators/has-email?
                              (partial validators/password-match? password)
                              #(->> (::user-spec/username %)
                                    (auth/generate-token email)

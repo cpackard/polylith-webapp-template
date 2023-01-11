@@ -20,11 +20,15 @@
     (->> (map read-fn cfgs)
          (apply merge))))
 
-(defn- prep-expound-and-database
-  "Enable pretty-printing for spec errors and setup/teardown test DB."
-  [db-name f]
+(defn- pretty-spec!
+  "Enable pretty printing for spec errors."
+  [f]
   (set! s/*explain-out* expound/printer)
+  (f))
 
+(defn- with-db!
+  "Setup/teardown test DB."
+  [db-name f]
   (let [ds        (-> (configs "sql/config.edn"
                                "auth/config.edn")
                       ::sql/db-spec)
@@ -37,7 +41,7 @@
 
     (sql/query drop-db opts ds)))
 
-(defn- reset-migrations
+(defn- reset-migrations!
   "Reset any DB migrations between test runs."
   [db-name f]
   (let [test-sys     (->  (configs  "sql/config.edn"
@@ -46,16 +50,17 @@
                           config/init)
         migratus-cfg (assoc-in sql-m/config [:db :dbname] db-name)]
 
-    (migratus/migrate migratus-cfg)
+    (migratus/reset migratus-cfg)
 
     (f)
-
     (config/halt! test-sys)))
 
 (let [test-db-name "poly_web_user_interface_test"]
-  (use-fixtures
-    :once (partial prep-expound-and-database test-db-name)
-    :each (partial reset-migrations test-db-name)))
+  (use-fixtures :once
+    pretty-spec!
+    (partial with-db! test-db-name))
+  (use-fixtures :each
+    (partial reset-migrations! test-db-name)))
 
 (deftest register!
   (let [register-tests (s/exercise-fn `user/register!)
@@ -87,6 +92,7 @@
           password (gen/generate (s/gen ::user-spec/password))]
       (is (= {:errors {:email ["Invalid email."]}}
              (user/login email password)))))
+
   (let [user (gen/generate (s/gen ::user-spec/new-user))
         email (::user-spec/email user)
         password (::user-spec/password user)]
