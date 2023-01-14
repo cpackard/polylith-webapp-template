@@ -12,11 +12,12 @@
     [core :as auth-core]
     [interface :as auth]]
    [poly.web.auth.interface
-    [spec :as auth-spec]]
+    [spec :as auth-s]]
    [poly.web.config
     [core :as cfg-core]
-    [interface :as cfg]
-    [spec :as cfg-sp]]
+    [interface :as cfg]]
+   [poly.web.config.interface
+    [spec :as cfg-s]]
    [poly.web.logging
     [core :as log-core]
     [interface :as log]]
@@ -26,11 +27,10 @@
    [poly.web.sql
     [core :as sql-core]
     [interface :as sql]
-    [migratus :as sql-mig]
-    [spec :as sql-sp]]
+    [migratus :as sql-m]]
    [poly.web.sql.interface
-    [helpers :as sql-helpers]
-    [spec :as sql-spec]]
+    [helpers :as sql-h]
+    [spec :as sql-s]]
    [poly.web.test-utils
     [core :as test-utils-core]
     [interface :as test-utils]]
@@ -39,7 +39,7 @@
     [interface :as user]
     [store :as user-store]]
    [poly.web.user.interface
-    [spec :as user-spec]]))
+    [spec :as user-s]]))
 
 (def sys-cfg (let [configs (map (fn [comp-cfg]
                                   (cfg/config comp-cfg {:profile :dev}))
@@ -65,12 +65,9 @@
   (st/instrument)
 
   ;; start Integrant system
-
   (when @sys
     (cfg/halt! @sys))
-  (reset! sys (cfg/init sys-cfg))
-  ;(go)
-  )
+  (reset! sys (cfg/init sys-cfg)))
 
 (defn get-ds
   "Retrieve the initialized connection pool from Integrant."
@@ -78,14 +75,5 @@
   (::sql/db-pool system))
 
 (comment
-  ;; start system
-  (go)
-
-  ;; stop system
-  (halt)
-
-  ;; reload source files and restart system
-  (reset)
-
-;; See https://github.com/weavejester/integrant-repl#usage for details
-  )
+  ;; (re)start system
+  (setup))

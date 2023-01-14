@@ -3,7 +3,7 @@
    [clojure.spec.alpha :as s]
    [expound.alpha :as expound]
    [poly.web.auth.interface :as auth]
-   [poly.web.user.interface.spec :as user-spec]
+   [poly.web.user.interface.spec :as user-s]
    [poly.web.user.store :as store]))
 
 (defn- format-err
@@ -18,22 +18,22 @@
                 (expound/expound-str spec-kw user))))
 
 (defn has-email?
-  [{::user-spec/keys [email]}]
+  [{::user-s/keys [email]}]
   (when-not (store/find-by-email email)
     (format-err :email "Invalid email.")))
 
 (defn password-match?
   [password user]
-  (when-not (auth/check password (::user-spec/password user))
+  (when-not (auth/check password (::user-s/password user))
     (format-err :password "Invalid password.")))
 
 (defn existing-email?
-  [{::user-spec/keys [email]}]
+  [{::user-s/keys [email]}]
   (when (store/find-by-email email)
     (format-err :email "A user exists with the given email.")))
 
 (defn existing-username?
-  [{::user-spec/keys [username]}]
+  [{::user-s/keys [username]}]
   (when (store/find-by-username username)
     (format-err :username "A user exists with the given username.")))
 

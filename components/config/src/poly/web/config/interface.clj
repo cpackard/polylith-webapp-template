@@ -2,11 +2,13 @@
   (:require
    [clojure.spec.alpha :as s]
    [poly.web.config.core :as core]
-   [poly.web.config.spec :as spec]))
+   [poly.web.config.interface.spec :as spec]))
+
+(s/def ::opts (s/keys :req-un [::spec/profile]))
 
 (s/fdef config
   :args (s/cat :cfg string?
-               :opts (s/? ::spec/opts))
+               :opts (s/? ::opts))
   :ret map?)
 
 (defn config

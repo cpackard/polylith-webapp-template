@@ -8,7 +8,7 @@
    [poly.web.sql.migratus :as sql-m]
    [poly.web.test-utils.interface :as test-utils]
    [poly.web.user.interface :as user]
-   [poly.web.user.interface.spec :as user-spec]))
+   [poly.web.user.interface.spec :as user-s]))
 
 (let [test-db-name "poly_web_user_interface_test"
       cfgs         ["sql/config.edn" "auth/config.edn"]
@@ -31,36 +31,36 @@
     (is (empty? (filter #(get-in % [:errors :request])
                         results))
         "Expected only valid users to be generated.")
-    (is (not-empty (filter #(s/valid? ::user-spec/visible-user %)
+    (is (not-empty (filter #(s/valid? ::user/visible-user %)
                            results))
         "Expected at least one user to be created successfully.")))
 
 (deftest user-by-token
   (testing "invalid tokens do not return a user"
     (is (=  {:errors {:token ["Cannot find a user with associated token."]}}
-            (user/user-by-token (gen/generate (s/gen ::user-spec/token))))))
+            (user/user-by-token (gen/generate (s/gen ::user-s/token))))))
   (testing "valid tokens return their user"
-    (let [user (->  (gen/generate (s/gen ::user-spec/new-user))
+    (let [user (->  (gen/generate (s/gen ::user/new-user))
                     (user/register!))]
-      (is (= user (user/user-by-token (::user-spec/token user)))))))
+      (is (= user (user/user-by-token (::user-s/token user)))))))
 
 (deftest login
   (testing "unregistered user cannot login"
-    (let [email    (gen/generate (s/gen ::user-spec/email))
-          password (gen/generate (s/gen ::user-spec/password))]
+    (let [email    (gen/generate (s/gen ::user-s/email))
+          password (gen/generate (s/gen ::user-s/password))]
       (is (= {:errors {:email ["Invalid email."]}}
              (user/login email password)))))
 
-  (let [user (gen/generate (s/gen ::user-spec/new-user))
-        email (::user-spec/email user)
-        password (::user-spec/password user)]
+  (let [user (gen/generate (s/gen ::user/new-user))
+        email (::user-s/email user)
+        password (::user-s/password user)]
     (user/register! user)
     (testing "existing user cannot login with incorrect password"
       (is (= {:errors {:password ["Invalid password."]}}
              (user/login email "bad-password"))))
     (testing "existing user can login with correct password"
       (let [visible-user (user/login email password)]
-        (is (= email (::user-spec/email visible-user))
+        (is (= email (::user-s/email visible-user))
             (format "Expected email %s from %s" email visible-user))
-        (is (some? (::user-spec/token visible-user))
+        (is (some? (::user-s/token visible-user))
             (format "Expected new token with user %s" visible-user))))))

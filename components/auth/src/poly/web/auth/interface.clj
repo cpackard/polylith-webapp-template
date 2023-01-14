@@ -2,13 +2,13 @@
   (:require
    [clojure.spec.alpha :as s]
    [poly.web.auth.core :as core]
-   [poly.web.auth.interface.spec :as auth-spec]
+   [poly.web.auth.interface.spec :as auth-s]
    [poly.web.spec.interface :as spec]))
 
 (s/fdef generate-token
   :args (s/cat :email spec/email?
                :username spec/non-empty-string?)
-  :ret ::auth-spec/jwt-str?)
+  :ret ::auth-s/jwt-str?)
 
 (defn generate-token
   "Generate an authentication token for the given user's email and username."
@@ -16,8 +16,8 @@
   (core/generate-token email username))
 
 (s/fdef token->claims
-  :args (s/cat :jwt ::auth-spec/jwt-str?)
-  :ret ::auth-spec/jwt)
+  :args (s/cat :jwt ::auth-s/jwt-str?)
+  :ret ::auth-s/jwt)
 
 (defn token->claims
   "Return all claims for the given token (as a string)."

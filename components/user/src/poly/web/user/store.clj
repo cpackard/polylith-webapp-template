@@ -5,7 +5,7 @@
    [poly.web.spec.interface :as spec]
    [poly.web.sql.interface :as sql]
    [poly.web.sql.interface.helpers :refer [from select where]]
-   [poly.web.user.interface.spec :as user-spec]))
+   [poly.web.user.interface.spec :as user-s]))
 
 (defn table-to-ns
   "Converts SQL table names to their respective clojure namespaces."
@@ -27,7 +27,7 @@
     (sql/query-one query {:qualifier-fn table-to-ns})))
 
 (s/fdef find-by-email
-  :args (s/cat :email ::user-spec/email)
+  :args (s/cat :email ::user-s/email)
   :ret (s/? map?))
 
 (defn find-by-email
@@ -51,9 +51,17 @@
   [id]
   (find-by :id id))
 
+(s/def ::new-user (s/keys :req [::user-s/username
+                                ::user-s/name
+                                ::user-s/email
+                                ::user-s/password]))
+
+(s/def ::registered-user (s/merge ::new-user
+                                  (s/keys :req [::user-s/id])))
+
 (s/fdef insert-user!
-  :args (s/cat :new-user ::user-spec/new-user)
-  :ret ::user-spec/user)
+  :args (s/cat :new-user ::new-user)
+  :ret ::registered-user)
 
 (defn insert-user!
   [new-user]

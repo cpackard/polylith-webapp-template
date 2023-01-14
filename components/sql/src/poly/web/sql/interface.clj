@@ -3,16 +3,15 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [poly.web.sql.core :as core]
-   [poly.web.sql.interface.spec :as sql-spec]
-   [poly.web.sql.spec :as spec]))
+   [poly.web.sql.interface.spec :as sql-s]))
 
 (defmethod ig/pre-init-spec ::db-spec
   [_]
-  spec/db-spec)
+  sql-s/db-spec)
 
 (defmethod ig/pre-init-spec ::db-pool
   [_]
-  (s/keys :req-un [::db-spec spec/db-spec]))
+  (s/keys :req-un [::db-spec sql-s/db-spec]))
 
 (defmethod ig/init-key ::db-spec
   [_ db-spec]
@@ -27,7 +26,7 @@
   (core/close-pool pool))
 
 (s/fdef init-pool
-  :args (s/cat :db-spec ::sql-spec/db-spec))
+  :args (s/cat :db-spec ::sql-s/db-spec))
 
 (defn init-pool
   "Create a database connection pool given the `db-spec` config map."
@@ -35,7 +34,7 @@
   (core/init-pool db-spec))
 
 (s/fdef close-pool
-  :args (s/cat :pool ::sql-spec/connectable))
+  :args (s/cat :pool ::sql-s/connectable))
 
 (defn close-pool
   "Close the given database connection pool."
@@ -45,7 +44,7 @@
 (s/fdef query
   :args (s/cat :query map?
                :opts (s/? map?)
-               :ds (s/? spec/connectable)))
+               :ds (s/? sql-s/connectable)))
 
 (defn query
   "Execute the given SQL query with optional arguments `opts`."
@@ -59,7 +58,7 @@
 (s/fdef query-one
   :args (s/cat :query map?
                :opts (s/? map?)
-               :ds (s/? spec/connectable))
+               :ds (s/? sql-s/connectable))
   :ret (complement sequential?))
 
 (defn query-one
@@ -76,7 +75,7 @@
 (s/fdef insert!
   :args (s/cat :table keyword?
                :row map?
-               :ds (s/? ::sql-spec/connectable))
+               :ds (s/? ::sql-s/connectable))
   :ret (s/nilable map?))
 
 (defn insert!
@@ -86,7 +85,7 @@
    (core/insert! table row ds)))
 
 (s/fdef transaction
-  :args (s/cat :ds ::sql-spec/connectable
+  :args (s/cat :ds ::sql-s/connectable
                :queries (s/+ map?)))
 
 (defn transaction
