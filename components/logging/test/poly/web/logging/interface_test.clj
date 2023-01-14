@@ -1,24 +1,30 @@
 (ns poly.web.logging.interface-test
   (:require
-   [clojure.test :as test :refer [deftest is testing]]
-   [poly.web.logging.interface :as logging]))
+   [clojure.test :as test :refer [deftest is testing use-fixtures]]
+   [poly.web.logging.interface :as log]
+   [poly.web.test-utils.interface :as tu]))
+
+(let [log-cfg {:min-level [[#{"poly.web.log.*"} :trace]]}]
+  (use-fixtures :once
+    (tu/with-log-config log-cfg)
+    tu/pretty-spec!))
 
 (deftest info-logs
   (testing "can log a standalone message"
-    (is (nil? (logging/info "info test"))))
+    (is (nil? (log/info "info test"))))
   (testing "can log a message and args"
-    (is (nil? (logging/info "info test" :with "extra message")))))
+    (is (nil? (log/info "info test" :with "extra message")))))
 
 (deftest warn-logs
   (testing "can log a standalone message"
-    (is (nil? (logging/warn "warn test"))))
+    (is (nil? (log/warn "warn test"))))
   (testing "can log a message with args"
-    (is (nil? (logging/warn "warn test" :data {:this "can be" :any "data"})))))
+    (is (nil? (log/warn "warn test" :data {:this "can be" :any "data"})))))
 
 (deftest error-logs
   (testing "can log a standalone message"
-    (is (nil? (logging/error "error test"))))
+    (is (nil? (log/error "error test"))))
   (testing "can log a messag with args"
-    (is (nil? (logging/error "error test"
-                             :exception
-                             (Exception. "exception which caused this log"))))))
+    (is (nil? (log/error "error test"
+                         :exception
+                         (Exception. "exception which caused this log"))))))
