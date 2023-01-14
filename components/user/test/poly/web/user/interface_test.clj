@@ -5,62 +5,20 @@
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as gen]
    [clojure.test :as test :refer [deftest is testing use-fixtures]]
-   [expound.alpha :as expound]
-   [migratus.core :as migratus]
-   [poly.web.config.interface :as config]
-   [poly.web.sql.interface :as sql]
    [poly.web.sql.migratus :as sql-m]
+   [poly.web.test-utils.interface :as test-utils]
    [poly.web.user.interface :as user]
    [poly.web.user.interface.spec :as user-spec]))
 
-(defn- configs
-  "Parse all configs requested in `cfgs` into a single merged map."
-  [& cfgs]
-  (let [read-fn (fn [cfg] (config/config cfg {:profile :dev}))]
-    (->> (map read-fn cfgs)
-         (apply merge))))
-
-(defn- pretty-spec!
-  "Enable pretty printing for spec errors."
-  [f]
-  (set! s/*explain-out* expound/printer)
-  (f))
-
-(defn- with-db!
-  "Setup/teardown test DB."
-  [db-name f]
-  (let [ds        (-> (configs "sql/config.edn"
-                               "auth/config.edn")
-                      ::sql/db-spec)
-        opts      {}
-        create-db {:raw (format "CREATE DATABASE %s" db-name)}
-        drop-db   {:raw (format "DROP DATABASE IF EXISTS %s WITH (FORCE)" db-name)}]
-    (sql/query create-db opts ds)
-
-    (f)
-
-    (sql/query drop-db opts ds)))
-
-(defn- reset-migrations!
-  "Reset any DB migrations between test runs."
-  [db-name f]
-  (let [test-sys     (->  (configs  "sql/config.edn"
-                                    "auth/config.edn")
-                          (assoc-in [::sql/db-spec :dbname] db-name)
-                          config/init)
-        migratus-cfg (assoc-in sql-m/config [:db :dbname] db-name)]
-
-    (migratus/reset migratus-cfg)
-
-    (f)
-    (config/halt! test-sys)))
-
-(let [test-db-name "poly_web_user_interface_test"]
+(let [test-db-name "poly_web_user_interface_test"
+      cfgs         ["sql/config.edn" "auth/config.edn"]
+      log-cfg      {:min-level [[#{"poly.web.user.*"} :info]]}
+      sys-cfg      (test-utils/sys-cfg cfgs)]
   (use-fixtures :once
-    pretty-spec!
-    (partial with-db! test-db-name))
-  (use-fixtures :each
-    (partial reset-migrations! test-db-name)))
+    (test-utils/set-log-config log-cfg)
+    test-utils/pretty-spec!
+    (test-utils/with-db! test-db-name sys-cfg))
+  (use-fixtures :each (test-utils/reset-migrations! test-db-name sys-cfg sql-m/config)))
 
 (deftest register!
   (let [register-tests (s/exercise-fn `user/register!)

@@ -6,7 +6,7 @@
 
 ;; Allows aero lib to parse the #ig/ref tag.
 (defmethod aero/reader 'ig/ref
-  [{:keys [profile] :as opts} tag value]
+  [_ _ value]
   (integrant.core/ref value))
 
 ;; TODO: refactor so the caller must pass in `(io/resource ...)`

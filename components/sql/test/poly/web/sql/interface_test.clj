@@ -6,14 +6,19 @@
    [honey.sql.helpers :refer [from select where]]
    [migratus.core :as migratus]
    [poly.web.sql.interface :as sql]
-   [poly.web.sql.migratus :as sql-m]))
+   [poly.web.sql.migratus :as sql-m]
+   [poly.web.test-utils.interface :as tu]))
+
+(def ^:private test-db-name "poly_web_sql_interface_test")
 
 (def ^:private config
   "custom `migratus` config - overrides certain properties for testing."
-  (merge sql-m/config
-         {:migration-table-name "test_app_migrations"
-          :migration-dir (re-find #"components.*"
-                                  (str (io/resource "sql/test-migrations/")))}))
+  (let [table-name "test_app_migrations"
+        directory (re-find #"components.*"
+                           (str (io/resource "sql/test-migrations/")))]
+    (-> sql-m/config
+        (merge {:migration-table-name table-name :migration-dir directory})
+        (assoc-in [:db :dbname] test-db-name))))
 
 (defn- migration-files
   "Return a seq of all migration files."
@@ -23,23 +28,32 @@
        (filter (fn [f] (string/ends-with? (str f) ".edn")))))
 
 (defn- migration-cleanup!
+  "Delete the SQL migration table
+  and all `.edn` files in the migration directory."
   []
   (let [migration-table (keyword (:migration-table-name config))
-        ds (:db config)]
+        ds              (:db config)]
     (sql/query {:drop-table [:if-exists migration-table]} {} ds))
   (doseq [file (migration-files)]
     (when (string/ends-with? file ".edn")
       (io/delete-file file true))))
 
-(defn prepare-for-tests
+(defn- prepare-for-tests
   [f]
   (migration-cleanup!)
   (f)
   (migration-cleanup!))
 
-(use-fixtures :each prepare-for-tests)
+(let [cfgs         ["sql/config.edn"]
+      opts         {:profile :dev}
+      log-cfg {:min-level [[#{"poly.web.sql.*"} :info]]}]
+  (use-fixtures :once
+    (tu/set-log-config log-cfg)
+    tu/pretty-spec!
+    (tu/with-db! test-db-name (tu/sys-cfg cfgs opts)))
+  (use-fixtures :each prepare-for-tests))
 
-(defn table-exists?
+(defn- table-exists?
   [table-name]
   (select [[:exists (-> (select)
                         (from [:information_schema.tables])

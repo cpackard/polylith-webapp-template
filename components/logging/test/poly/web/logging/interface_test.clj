@@ -6,7 +6,7 @@
 
 (let [log-cfg {:min-level [[#{"poly.web.log.*"} :trace]]}]
   (use-fixtures :once
-    (tu/with-log-config log-cfg)
+    (tu/set-log-config log-cfg)
     tu/pretty-spec!))
 
 (deftest info-logs

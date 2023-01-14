@@ -32,7 +32,7 @@
 
 (defn find-by-email
   [email]
-  (log/info (str "looking for email" email))
+  (log/debug (str "looking for email" email))
   (find-by :email email))
 
 (s/fdef find-by-username
