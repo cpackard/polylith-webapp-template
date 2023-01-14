@@ -31,6 +31,9 @@
    [poly.web.sql.interface
     [helpers :as sql-helpers]
     [spec :as sql-spec]]
+   [poly.web.test-utils
+    [core :as test-utils-core]
+    [interface :as test-utils]]
    [poly.web.user
     [core :as user-core]
     [interface :as user]
