@@ -15,7 +15,7 @@
         (and (not (contains? ret ::user-spec/password))
              (= (:token args) (::user-spec/token ret)))))
 
-(defn user->visible-user
+(defn- user->visible-user
   [user token]
   (-> user
       (assoc ::user-spec/token token)
