@@ -47,10 +47,6 @@
                                  "auth/config.edn"])]
                (apply merge configs)))
 
-(def ^:private sys
-  "reference to initialized dependency state"
-  (atom nil))
-
 (integrant.repl/set-prep!
  (fn [] sys-cfg))
 
@@ -64,10 +60,11 @@
   (st/unstrument)
   (st/instrument)
 
+  ;; Enable all logging
+  (log/merge-config! {:min-level :debug})
+
   ;; start Integrant system
-  (when @sys
-    (cfg/halt! @sys))
-  (reset! sys (cfg/init sys-cfg)))
+  (go))
 
 (defn get-ds
   "Retrieve the initialized connection pool from Integrant."
