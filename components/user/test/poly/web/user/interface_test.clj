@@ -11,9 +11,10 @@
    [poly.web.user.interface :as user]
    [poly.web.user.interface.spec :as user-s]))
 
-(let [test-db-name "poly_web_user_interface_test"]
+(let [test-db-name "poly_web_user_interface_test"
+      log-cfg {:min-level [[#{"poly.web.user.*"} :info]]}]
   (use-fixtures :once
-    (log-tu/set-log-config)
+    (log-tu/set-log-config log-cfg)
     (sql-tu/with-db! test-db-name)
     test-utils/pretty-spec!)
   (use-fixtures :each

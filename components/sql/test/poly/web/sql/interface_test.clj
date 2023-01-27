@@ -51,6 +51,9 @@
   (sql-tu/with-db! test-db-name)
   tu/pretty-spec!)
 
+(use-fixtures :each
+  prepare-for-tests)
+
 (defn- table-exists?
   [table-name]
   (select [[:exists (-> (select)
