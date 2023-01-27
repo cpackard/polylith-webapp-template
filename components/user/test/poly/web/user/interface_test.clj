@@ -5,20 +5,19 @@
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as gen]
    [clojure.test :as test :refer [deftest is testing use-fixtures]]
-   [poly.web.sql.migratus :as sql-m]
+   [poly.web.logging.interface.test-utils :as log-tu]
+   [poly.web.sql.interface.test-utils :as sql-tu]
    [poly.web.test-utils.interface :as test-utils]
    [poly.web.user.interface :as user]
    [poly.web.user.interface.spec :as user-s]))
 
-(let [test-db-name "poly_web_user_interface_test"
-      cfgs         ["sql/config.edn" "auth/config.edn"]
-      log-cfg      {:min-level [[#{"poly.web.user.*"} :info]]}
-      sys-cfg      (test-utils/sys-cfg cfgs)]
+(let [test-db-name "poly_web_user_interface_test"]
   (use-fixtures :once
-    (test-utils/set-log-config log-cfg)
-    test-utils/pretty-spec!
-    (test-utils/with-db! test-db-name sys-cfg))
-  (use-fixtures :each (test-utils/reset-migrations! test-db-name sys-cfg sql-m/config)))
+    (log-tu/set-log-config)
+    (sql-tu/with-db! test-db-name)
+    test-utils/pretty-spec!)
+  (use-fixtures :each
+    (sql-tu/reset-migrations! test-db-name)))
 
 (deftest register!
   (let [register-tests (s/exercise-fn `user/register!)
