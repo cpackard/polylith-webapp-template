@@ -2,12 +2,11 @@
   (:require
    [clojure.test :as test :refer [deftest is testing use-fixtures]]
    [poly.web.logging.interface :as log]
-   [poly.web.test-utils.interface :as tu]))
+   [poly.web.logging.interface.test-utils :as log-tu]))
 
 (let [log-cfg {:min-level [[#{"poly.web.log.*"} :trace]]}]
   (use-fixtures :once
-    (tu/set-log-config log-cfg)
-    tu/pretty-spec!))
+    (log-tu/set-log-config log-cfg)))
 
 (deftest info-logs
   (testing "can log a standalone message"
