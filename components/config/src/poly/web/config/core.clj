@@ -14,6 +14,13 @@
   [cfg opts]
   (aero/read-config (io/resource cfg) opts))
 
+(defn parse-cfgs
+  "Parse all configs in `cfgs` into a single merged map."
+  [cfgs opts]
+  (reduce merge (map #(config % opts)
+                     cfgs)))
+
+;; TODO: get rid of this
 (def ^:private system
   "Reference to the Integrant system dependencies (initialized on app startup)."
   (atom {}))

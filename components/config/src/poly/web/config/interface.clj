@@ -18,6 +18,16 @@
   ([cfg opts]
    (core/config cfg opts)))
 
+(s/fdef parse-cfgs
+  :args (s/cat :cfg (s/coll-of string?)
+               :opts (s/? ::opts))
+  :ret map?)
+
+(defn parse-cfgs
+  "Parse all configs requested in `cfgs` into a single merged map."
+  [cfgs opts]
+  (core/parse-cfgs cfgs opts))
+
 (s/fdef env
   :args (s/cat :key keyword?))
 
