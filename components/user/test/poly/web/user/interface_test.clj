@@ -6,10 +6,12 @@
    [clojure.spec.gen.alpha :as gen]
    [clojure.test :as test :refer [deftest is testing use-fixtures]]
    [poly.web.logging.interface.test-utils :as log-tu]
+   [poly.web.spec.interface.test-utils :as spec-tu]
    [poly.web.sql.interface.test-utils :as sql-tu]
    [poly.web.test-utils.interface :as test-utils]
    [poly.web.user.interface :as user]
-   [poly.web.user.interface.spec :as user-s]))
+   [poly.web.user.interface.spec :as user-s]
+   [poly.web.user.interface.test-utils :as user-tu]))
 
 (let [test-db-name "poly_web_user_interface_test"
       log-cfg {:min-level [[#{"poly.web.user.*"} :info]]}]
@@ -40,8 +42,8 @@
     (is (=  {:errors {:token ["Cannot find a user with associated token."]}}
             (user/user-by-token (gen/generate (s/gen ::user-s/token))))))
   (testing "valid tokens return their user"
-    (let [user (->  (gen/generate (s/gen ::user/new-user))
-                    (user/register!))]
+    (let [email (spec-tu/gen-email)
+          user (user-tu/new-user! ::user-s/email email)]
       (is (= user (user/user-by-token (::user-s/token user)))))))
 
 (deftest login

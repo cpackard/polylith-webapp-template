@@ -14,16 +14,17 @@
   [_ secret]
   secret)
 
-(def base-user (s/keys :req [::user-s/id
-                             ::user-s/name
+(def base-user (s/keys :req [::user-s/name
                              ::user-s/email]
-                       :opt [::user-s/username]))
+                       :opt [::user-s/username
+                             ::user-s/id]))
 
 (s/def ::new-user (s/merge base-user
                            (s/keys :req [::user-s/username ::user-s/password])))
 
 (s/def ::visible-user (s/merge base-user
-                               (s/keys :req [::user-s/token])))
+                               (s/keys :req [::user-s/token
+                                             ::user-s/id])))
 
 (def user-response (s/cat :val (s/alt :errors ::spec/errors
                                       :response ::visible-user)))
