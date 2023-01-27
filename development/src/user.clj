@@ -61,7 +61,7 @@
   (st/instrument)
 
   ;; Enable all logging
-  (log/merge-config! {:min-level :debug})
+  (log/merge-config! {:min-level :info})
 
   ;; start Integrant system
   (go))
