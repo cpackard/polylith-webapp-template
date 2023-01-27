@@ -5,7 +5,9 @@
    [clojure.test :as test :refer [deftest is use-fixtures]]
    [honey.sql.helpers :refer [from select where]]
    [migratus.core :as migratus]
+   [poly.web.logging.interface.test-utils :as log-tu]
    [poly.web.sql.interface :as sql]
+   [poly.web.sql.interface.test-utils :as sql-tu]
    [poly.web.sql.migratus :as sql-m]
    [poly.web.test-utils.interface :as tu]))
 
@@ -44,14 +46,10 @@
   (f)
   (migration-cleanup!))
 
-(let [cfgs         ["sql/config.edn"]
-      opts         {:profile :dev}
-      log-cfg {:min-level [[#{"poly.web.sql.*"} :info]]}]
-  (use-fixtures :once
-    (tu/set-log-config log-cfg)
-    tu/pretty-spec!
-    (tu/with-db! test-db-name (tu/sys-cfg cfgs opts)))
-  (use-fixtures :each prepare-for-tests))
+(use-fixtures :once
+  (log-tu/set-log-config)
+  (sql-tu/with-db! test-db-name)
+  tu/pretty-spec!)
 
 (defn- table-exists?
   [table-name]
