@@ -59,6 +59,7 @@
 ;;   (deftest user
 ;;     (let [user (gen/generate (s/gen ::user-t/registered-user))])))
 
+;; TODO: I don't like the look of these nested tests 🤔
 (deftest user
   (testing "/api/users"
     (let [user (gen/generate (s/gen ::user/new-user))]
