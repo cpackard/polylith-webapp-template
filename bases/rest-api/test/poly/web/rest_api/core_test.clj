@@ -11,34 +11,46 @@
    [poly.web.logging.interface.test-utils :as log-tu]
    [poly.web.rest-api.core :as core]
    [poly.web.spec.interface.test-utils :as spec-tu]
+   [poly.web.sql.interface :as sql]
    [poly.web.sql.interface.test-utils :as sql-tu]
    [poly.web.test-utils.interface :as test-utils]
    [poly.web.user.interface :as user]
    [poly.web.user.interface.spec :as user-s]
    [poly.web.user.interface.test-utils :as user-tu]))
 
+(def ^:private service
+  "Reference to the HTTP service used during testing"
+  (atom nil))
+
+(defn- http-service
+  "Create HTTP service function for testing"
+  [db-name]
+  (fn [f]
+    (let [sys (-> ["sql/config.edn" "auth/config.edn" "rest-api/config.edn" "logging/config.edn"]
+                  (cfg/parse-cfgs {:profile :test})
+                  (dissoc ::core/server)
+                  (assoc-in [::sql/db-spec :dbname] db-name)
+                  cfg/init)
+          service-fn (-> sys ::core/service-map http/create-servlet ::http/service-fn)]
+      (reset! service service-fn)
+
+      (f)
+
+      (cfg/halt! sys)
+      (reset! service nil))))
+
 (let [test-db "poly_web_rest_api_core_test"]
   (use-fixtures :once
     (log-tu/set-log-config)
     (sql-tu/with-db! test-db)
-    test-utils/pretty-spec!)
+    test-utils/pretty-spec!
+    (http-service test-db))
 
   (use-fixtures :each
     (sql-tu/reset-migrations! test-db)))
 
-; TODO: clean this up (see below)
-(defn service
-  []
-  (-> ["sql/config.edn" "auth/config.edn" "rest-api/config.edn"]
-      (core/parse-cfgs {:profile :test})
-      (dissoc ::core/server)
-      cfg/init
-      ::core/service-map
-      http/create-servlet
-      ::http/service-fn))
-
 (deftest echo-route--ok-response
-  (is (= 200 (:status (response-for (service) :get "/api/echo")))))
+  (is (= 200 (:status (response-for @service :get "/api/echo")))))
 
 ; TODO: should bricks expose helper functions to make test creation easier?
 ; like `poly.web.user.interface.test`?
@@ -52,14 +64,14 @@
     (let [user (gen/generate (s/gen ::user/new-user))]
       (testing "can register a user successfully"
         (let [{:keys [status]}
-              (response-for (service)
+              (response-for @service
                             :post "/api/users"
                             :body (json/write-str {:user user})
                             :headers {"Content-Type" "application/json"})]
           (is (= 200 status))))
       (testing "handles bad request (missing email)"
         (let [{:keys [status body]}
-              (response-for (service)
+              (response-for @service
                             :post "/api/users"
                             :body (json/write-str {:user (dissoc user ::user-s/email)})
                             :headers {"Content-Type" "application/json"})]
@@ -70,7 +82,7 @@
           user  (user-tu/new-user! ::user-s/email email)]
       (testing "can login with a registered user"
         (let [{:keys [status body]}
-              (response-for (service)
+              (response-for @service
                             :post (str "/api/users/login/" (::user-s/id user))
                             :body (json/write-str {:user user})
                             :headers {"Content-Type" "application/json"
