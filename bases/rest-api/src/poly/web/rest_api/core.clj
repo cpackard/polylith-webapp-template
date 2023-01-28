@@ -3,6 +3,7 @@
    [integrant.core :as ig]
    [io.pedestal.http :as http]
    [io.pedestal.http.body-params :as body-params]
+   [io.pedestal.http.route :as route]
    [poly.web.config.interface :as cfg]
    [poly.web.rest-api.api :as api]
    [poly.web.rest-api.middleware :as m]
@@ -70,10 +71,10 @@
                                 [:= :table_schema "public"]
                                 [:= :table_name table-name]]))]]))
 
-(defmethod ig/init-key ::service-map [_ {:keys [pool extras]}]
-  (sql/query (table-exists? "users") {} pool)
+(defmethod ig/init-key ::service-map [_ {:keys [pool extras reloadable?]}]
+  (sql/query (table-exists? "users") {} pool) ; run to initialize DB connection
   (-> service
-      (merge extras)
+      (merge extras (when reloadable? {::http/routes #(route/expand-routes api/routes)}))
       http/default-interceptors
       (update ::http/interceptors into (common-interceptors pool))))
 
@@ -89,16 +90,9 @@
 (defmethod ig/halt-key! ::server [_ server]
   (http/stop server))
 
-(defn parse-cfgs
-  "Parse all configs requested in `cfgs` into a single merged map."
-  [cfgs opts]
-  (reduce merge (map #(cfg/config % opts)
-                     cfgs)))
-
 (defn -main
   "The entry-point for 'clojure -M:main'"
   [& args]
-  (let [component-cfgs ["sql/config.edn" "auth/config.edn" "rest-api/config.edn"]]
-    (-> (parse-cfgs component-cfgs {:profile :default})
-        cfg/config
+  (let [component-cfgs ["sql/config.edn" "auth/config.edn" "rest-api/config.edn" "logging/config.edn"]]
+    (-> (cfg/parse-cfgs component-cfgs {:profile :default})
         cfg/init)))
