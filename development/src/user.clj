@@ -21,6 +21,12 @@
    [poly.web.logging
     [core :as log-core]
     [interface :as log]]
+   [poly.web.rest-api
+    [handler :as handler]
+    [api :as api]
+    [middleware :as middleware]
+    [core :as api-core]
+    [spec :as api-spec]]
    [poly.web.spec
     [interface :as spec]
     [core :as spec-core]]
@@ -44,7 +50,8 @@
 (def sys-cfg (let [configs (map (fn [comp-cfg]
                                   (cfg/config comp-cfg {:profile :dev}))
                                 ["sql/config.edn"
-                                 "auth/config.edn"])]
+                                 "auth/config.edn"
+                                 "rest-api/config.edn"])]
                (apply merge configs)))
 
 (integrant.repl/set-prep!

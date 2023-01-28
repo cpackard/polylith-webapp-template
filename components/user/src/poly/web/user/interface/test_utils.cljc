@@ -28,11 +28,10 @@
 
 (defn new-user!
   "Generate a new user and register with the DB for testing"
-  [& {::user-s/keys [id name email username password]
-      :as new-user}]
-  (let [new-user (-> (merge (gen/generate (s/gen ::user/new-user))
-                            new-user)
-                     user/register!)]
-    (if-let [errors (:errors new-user)]
+  [& {:as new-user}]
+  (let [newu (-> (gen/generate (s/gen ::user/new-user))
+                 (merge new-user)
+                 user/register!)]
+    (if-let [errors (:errors newu)]
       (throw (ex-info "could not create new user" errors))
-      new-user)))
+      newu)))

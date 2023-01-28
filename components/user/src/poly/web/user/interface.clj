@@ -16,8 +16,7 @@
 
 (def base-user (s/keys :req [::user-s/name
                              ::user-s/email]
-                       :opt [::user-s/username
-                             ::user-s/id]))
+                       :opt [::user-s/username]))
 
 (s/def ::new-user (s/merge base-user
                            (s/keys :req [::user-s/username ::user-s/password])))

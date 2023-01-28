@@ -4,7 +4,7 @@
    [poly.web.auth.interface.spec :as auth-s]
    [poly.web.spec.interface :as spec]))
 
-(s/def ::id uuid?)
+(s/def ::id (or uuid? #(-> % parse-uuid uuid?)))
 (s/def ::name spec/non-empty-string?)
 (s/def ::password spec/password?)
 (s/def ::email spec/email?)
