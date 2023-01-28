@@ -47,15 +47,12 @@
    [poly.web.user.interface
     [spec :as user-s]]))
 
-(def sys-cfg (let [configs (map (fn [comp-cfg]
-                                  (cfg/config comp-cfg {:profile :dev}))
-                                ["sql/config.edn"
-                                 "auth/config.edn"
-                                 "rest-api/config.edn"])]
-               (apply merge configs)))
-
 (integrant.repl/set-prep!
- (fn [] sys-cfg))
+ (fn [] (cfg/parse-cfgs ["sql/config.edn"
+                         "auth/config.edn"
+                         "rest-api/config.edn"
+                         "logging/config.edn"]
+                        {:profile :dev})))
 
 (defn setup
   []
