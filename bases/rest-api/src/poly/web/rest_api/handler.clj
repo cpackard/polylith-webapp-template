@@ -37,23 +37,29 @@
     :else (ok res)))
 
 (defn- qualify-kws
-  "Qualify all keywords in `m` with the namespace `ns`"
+  "Qualify all keys in `m` with the namespace `ns`"
   [m ns]
   (->> m
        (map (fn [[k v]] [(keyword ns (name k)) v]))
        (into {})))
 
+(defn- explain-bad-req
+  "Create an error map explaining why `form` is an invalid `spec`."
+  [spec form]
+  {:errors {:request-err [(expound/expound spec form)]}})
+
+;; TODO: update this to be PUT
 (def user-register
   "POST request to create a new user."
   {:name :user-register
    :enter
    (fn [context]
-     (let [new-user (qualify-kws (get-in context [:request :json-params :user])
-                                 (namespace ::user-s/id))]
-       (if (s/valid? ::user/new-user new-user)
-         (->> new-user user/register! response-code (assoc context :response))
-         (assoc context :response
-                (response-code {:errors {:request-err [(expound/expound ::user/new-user new-user)]}})))))})
+     (let [new-user (-> (get-in context [:request :json-params :user])
+                        (qualify-kws (namespace ::user-s/id)))
+           response (if (s/valid? ::user/new-user new-user)
+                      (->> new-user user/register!)
+                      (explain-bad-req ::user/new-user new-user))]
+       (assoc context :response (response-code response))))})
 
 (def user-login
   "POST request to login as an existing user."
