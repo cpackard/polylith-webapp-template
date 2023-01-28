@@ -1,0 +1,1 @@
+{:poly.web.logging.interface/log-config {:min-level #profile {:default [[#{"com.zaxxer.*" "migratus.*" "io.pedestal.*"} :info]]}}}

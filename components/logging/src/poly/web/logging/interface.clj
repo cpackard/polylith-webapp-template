@@ -1,5 +1,6 @@
 (ns poly.web.logging.interface
   (:require
+   [integrant.core :as ig]
    [poly.web.logging.core :as core]))
 
 (defmacro debug
@@ -29,3 +30,6 @@
 (defmacro merge-config!
   [config]
   `(core/merge-config! ~config))
+
+(defmethod ig/init-key ::log-config [_ config]
+  (merge-config! config))
