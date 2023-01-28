@@ -49,6 +49,7 @@
   {:errors {:request-err [(expound/expound spec form)]}})
 
 ;; TODO: update this to be PUT
+;; and make use of `url-for` http://pedestal.io/guides/your-first-api#_url_for
 (def user-register
   "POST request to create a new user."
   {:name :user-register
