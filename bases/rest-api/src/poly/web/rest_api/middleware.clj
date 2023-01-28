@@ -89,10 +89,13 @@
 
 (def err-handler
   (err/error-dispatch
+   #_{:clj-kondo/ignore [:unresolved-symbol]}
    [ctx ex]
 
    [{:exception-type :java.lang.NumberFormatException}]
+   #_{:clj-kondo/ignore [:unresolved-symbol]}
    (assoc ctx :response {:status 400 :body "Not a number!\n"})
 
    :else
+   #_{:clj-kondo/ignore [:unresolved-symbol]}
    (assoc ctx :io.pedestal.interceptor.chain/error ex)))
