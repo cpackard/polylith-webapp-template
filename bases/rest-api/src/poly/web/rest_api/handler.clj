@@ -46,7 +46,7 @@
 (defn- explain-bad-req
   "Create an error map explaining why `form` is an invalid `spec`."
   [spec form]
-  {:errors {:request-err [(expound/expound spec form)]}})
+  {:errors {:request-err [(expound/expound-str spec form)]}})
 
 ;; TODO: update this to be PUT
 ;; and make use of `url-for` http://pedestal.io/guides/your-first-api#_url_for
@@ -67,7 +67,8 @@
   {:name :user-login
    :enter
    (fn [context]
-     (let [{:keys [email password]} (:request context)]
+     (let [{:keys [email password]} (get-in context
+                                            [:request :json-params :user])]
        (->> (user/login email password)
             response-code
             (assoc context :response))))})

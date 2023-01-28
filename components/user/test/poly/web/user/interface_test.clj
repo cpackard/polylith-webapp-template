@@ -43,8 +43,9 @@
             (user/user-by-token (gen/generate (s/gen ::user-s/token))))))
   (testing "valid tokens return their user"
     (let [email (spec-tu/gen-email)
-          user (user-tu/new-user! ::user-s/email email)]
-      (is (= user (user/user-by-token (::user-s/token user)))))))
+          user  (user-tu/new-user! ::user-s/email email)]
+      (is (= (dissoc user ::user-s/password)
+             (user/user-by-token (::user-s/token user)))))))
 
 (deftest login
   (testing "unregistered user cannot login"
@@ -53,8 +54,8 @@
       (is (= {:errors {:email ["Invalid email."]}}
              (user/login email password)))))
 
-  (let [user (gen/generate (s/gen ::user/new-user))
-        email (::user-s/email user)
+  (let [user     (gen/generate (s/gen ::user/new-user))
+        email    (::user-s/email user)
         password (::user-s/password user)]
     (user/register! user)
     (testing "existing user cannot login with incorrect password"

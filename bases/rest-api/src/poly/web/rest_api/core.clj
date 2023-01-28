@@ -56,8 +56,11 @@
 
 (defn- common-interceptors
   [pool]
-  ;[m/coerce-body m/content-neg-intc (m/db-interceptor pool) m/err-handler]
-  [(body-params/body-params) (m/db-interceptor pool) m/err-handler])
+  [(body-params/body-params)
+   m/coerce-body
+   m/content-neg-intc
+   (m/db-interceptor pool)
+   m/err-handler])
 
 (defn table-exists?
   [table-name]
