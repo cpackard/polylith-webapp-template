@@ -30,6 +30,5 @@
 
 (comment
   (do
-    (require '[poly.web.sql.migratus :as sql-m])
-    (require '[migratus.core :as m])
-    (m/reset sql-m/config)))
+    ;(require '[poly.web.sql.interface :as sql])
+    (sql/migrate!)))

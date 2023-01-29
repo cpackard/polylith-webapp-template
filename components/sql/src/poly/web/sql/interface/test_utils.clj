@@ -1,9 +1,11 @@
 (ns poly.web.sql.interface.test-utils
   (:require
+   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [migratus.core :as migratus]
+   [clojure.string :as string]
    [poly.web.config.interface :as cfg]
    [poly.web.sql.interface :as sql]
+   [poly.web.sql.migrations :as migrations]
    [poly.web.sql.migratus :as sql-m]))
 
 (defn- create-sys-cfg
@@ -50,8 +52,27 @@
   [db-name]
   (fn [f]
     (let [[sys migration-cfg] (start-db-pool! db-name (create-sys-cfg))]
-      (migratus/reset migration-cfg)
+      (migrations/reset-migrations! migration-cfg)
 
       (f)
 
       (cfg/halt! sys))))
+
+(defn migration-cleanup!
+  "Delete the SQL migration table
+  and all `.edn` files in the migration directory."
+  ([]
+   (migration-cleanup! sql-m/config))
+  ([config]
+   (let [migration-table (keyword (:migration-table-name config))
+         ds              (:db config)
+         drop-table      #(sql/query {:drop-table [:if-exists migration-table]} {} ds)
+         delete-fs       #(doseq [file (migrations/migration-files config)]
+                            (when (string/ends-with? file ".edn")
+                              (io/delete-file file true)))]
+     (fn [f]
+       (doseq [f0 [drop-table delete-fs]] (f0))
+
+       (f)
+
+       (doseq [f2 [drop-table delete-fs]] (f2))))))

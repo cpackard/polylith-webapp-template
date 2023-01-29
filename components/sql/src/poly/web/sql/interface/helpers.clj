@@ -4,6 +4,7 @@
    [honey.sql.helpers :as helpers]
    [poly.web.sql.core :as core]))
 
+;; allows honey.sql to understand `core/create-index`
 (h/register-clause! :create-index
                     (fn [clause x]
                       (let [[index-name [table column]] x]

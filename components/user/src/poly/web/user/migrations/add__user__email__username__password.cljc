@@ -41,6 +41,5 @@
 
 (comment
   (do
-    (require '[poly.web.sql.migratus :as sqlm])
-    (require '[migratus.core :as migratus])
-    (migratus/migrate sqlm/config)))
+    ;(require '[poly.web.sql.interface :as sql])
+    (sql/migrate!)))

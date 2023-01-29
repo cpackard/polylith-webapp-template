@@ -2,8 +2,10 @@
   (:require
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
+   [poly.web.spec.interface :as spec]
    [poly.web.sql.core :as core]
-   [poly.web.sql.interface.spec :as sql-s]))
+   [poly.web.sql.interface.spec :as sql-s]
+   [poly.web.sql.migrations :as migrations]))
 
 (defmethod ig/pre-init-spec ::db-spec
   [_]
@@ -11,7 +13,7 @@
 
 (defmethod ig/pre-init-spec ::db-pool
   [_]
-  (s/keys :req-un [::db-spec sql-s/db-spec]))
+  (s/keys :req-un [::sql-s/db-spec]))
 
 (defmethod ig/init-key ::db-spec
   [_ db-spec]
@@ -92,3 +94,51 @@
   "Execute each query sequentially in a transaction."
   [ds queries]
   (core/transaction ds queries))
+
+(s/def ::migration-file? spec/non-empty-string?)
+(s/def ::ns? spec/non-empty-string?)
+(s/def ::up-fn? spec/non-empty-string?)
+(s/def ::down-fn? spec/non-empty-string?)
+(s/def ::transaction? boolean?)
+
+(s/def ::migration-kw? #{::ns ::up-fn? ::down-fn? ::transaction?})
+
+(s/def ::migration (s/keys :opt-un [::ns ::up-fn? ::down-fn? ::transaction?]))
+
+(s/fdef create-migration-file
+  :args (s/cat :name ::migration-file?
+               :ns ::ns?
+               :tx? ::transaction?
+               :migration-cfg (s/cat :kwarg-pairs (s/* (s/cat :keyword ::migration-kw?
+                                                              :val any?))
+                                     :opts-map (s/? ::migration))))
+
+(defn create-migration!
+  "Create a timestamped file for a new DB migration.
+
+  TODO: expand docstring with kwarg options."
+  [name ns & {:keys [tx?] :or {tx? true} :as opts}]
+  (migrations/create-migration! name ns tx? opts))
+
+(defn migrate!
+  "Run any outstanding migrations"
+  [& {:as opts}]
+  (migrations/migrate! opts))
+
+(defn rollback!
+  "Rollback all migrations after `migration-id`. Defaults to the last migration.
+
+  This only considers completed migrations, and will not migrate up."
+  [& {:keys [migration-id] :as opts}]
+  (migrations/rollback! migration-id opts))
+
+(defn reset-migrations!
+  "Reset the database by running `down` on any migrations successfully applied
+  and then running `up` for all migrations."
+  [& {:as opts}]
+  (migrations/reset-migrations! opts))
+
+(defn pending-migrations
+  "Return a list of all pending migrations."
+  [& {:as opts}]
+  (migrations/pending-migrations opts))
