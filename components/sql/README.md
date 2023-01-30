@@ -16,8 +16,8 @@ This component currently uses:
 
 This project assumes you have a [PostgreSQL](https://www.postgresql.org/) instance running with the following settings:
 - host: `localhost`
-- port: `5432`
-- database (name): `postgres`
+- port: `6432`
+- database (name): `app`
 - user: `pguser`
 - password `pgpass`
 
