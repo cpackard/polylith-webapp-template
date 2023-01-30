@@ -28,16 +28,13 @@
     (format-err :password "Invalid password.")))
 
 (defn existing-email?
-  [{::user-s/keys [email]}]
-  (when (store/find-by-email email)
-    (format-err :email "A user exists with the given email.")))
+  [{::user-s/keys [email] :as user}]
+  (if (store/find-by-email email)
+    (format-err :email "A user exists with the given email.")
+    user))
 
 (defn existing-username?
-  [{::user-s/keys [username]}]
-  (when (store/find-by-username username)
-    (format-err :username "A user exists with the given username.")))
-
-(defn user-created?
-  [user]
-  (when (nil? (store/insert-user! user))
-    (format-err :other "Cannot insert user into db.")))
+  [{::user-s/keys [username] :as user}]
+  (if (store/find-by-username username)
+    (format-err :username "A user exists with the given username.")
+    user))

@@ -14,7 +14,9 @@
    [poly.web.user.interface.test-utils :as user-tu]))
 
 (let [test-db-name "poly_web_user_interface_test"
-      log-cfg {:min-level [[#{"poly.web.user.*"} :info]]}]
+      log-cfg {:min-level
+               [[#{"com.zaxxer.*" "migratus.*" "io.pedestal.*"} :error]
+                [#{"poly.web.user.*"} :info]]}]
   (use-fixtures :once
     (log-tu/set-log-config log-cfg)
     (sql-tu/with-db! test-db-name)

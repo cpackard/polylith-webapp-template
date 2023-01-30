@@ -77,14 +77,17 @@
 (s/fdef insert!
   :args (s/cat :table keyword?
                :row map?
+               :opts map?
                :ds (s/? ::sql-s/connectable))
   :ret (s/nilable map?))
 
 (defn insert!
   ([table row]
-   (insert! table row (core/ds)))
-  ([table row ds]
-   (core/insert! table row ds)))
+   (insert! table row {} (core/ds)))
+  ([table row opts]
+   (insert! table row opts (core/ds)))
+  ([table row opts ds]
+   (core/insert! table row opts ds)))
 
 (s/fdef transaction
   :args (s/cat :ds ::sql-s/connectable

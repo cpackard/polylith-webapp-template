@@ -44,7 +44,7 @@
   (find-by :username username))
 
 (s/fdef find-by-id
-  :args (s/cat :id uuid?)
+  :args (s/cat :id ::user-s/id)
   :ret (s/? map?))
 
 (defn find-by-id
@@ -65,4 +65,4 @@
 
 (defn insert-user!
   [new-user]
-  (sql/insert! :users new-user))
+  (sql/insert! :users new-user {:qualifier-fn table-to-ns}))
