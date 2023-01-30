@@ -44,6 +44,10 @@
   [& args]
   (apply helpers/add-column args))
 
+(defn alter-column
+  [& col-elems]
+  (apply helpers/alter-column col-elems))
+
 (defn drop-column
   [& args]
   (apply helpers/drop-column args))
