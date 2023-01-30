@@ -51,14 +51,29 @@
     (user->visible-user user token)
     {:errors {:token ["Cannot find a user with associated token."]}}))
 
+(defn process
+  "Takes an input `data` and any number of single-argument functions.
+
+  Calls each function with the result of the previous function
+  (or `data` for the first function).
+  Returns if the last function's result contains the `:errors` key,
+  otherwise continues."
+  [data & functions]
+  (loop [d         data
+         [f & fns] functions]
+    (let [{:keys [errors] :as res} (f d)]
+      (if (or errors (empty? fns))
+        res
+        (recur res fns)))))
+
 (defn register!
   [{::user-s/keys [username email password] :as req-user}]
   (let [new-user    (assoc req-user
-                           ::user-s/password (auth/encrypt-password password)
-                           ::user-s/id (java.util.UUID/randomUUID))
-        new-token   (auth/generate-token email username)
-        validations (some-fn validators/existing-email?
-                             validators/existing-username?
-                             validators/user-created?
-                             #(user->visible-user % new-token))]
-    (validations new-user)))
+                           ::user-s/password
+                           (auth/encrypt-password password))
+        new-token (auth/generate-token email username)]
+    (process new-user
+             validators/existing-email?
+             validators/existing-username?
+             store/insert-user!
+             #(user->visible-user % new-token))))

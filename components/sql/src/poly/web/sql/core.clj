@@ -64,14 +64,15 @@
   (first (query sql-query opts ds)))
 
 (defn insert!
-  [table row ds]
+  [table row opts ds]
   (try
-    (jdbc-sql/insert! ds table row)
+    (jdbc-sql/insert! ds table row opts)
     (catch Exception e
       (log/warn "Unable to add row to db."
                 :row row
                 :table table
-                :exc-msg (.getMessage e)))))
+                :exc-msg (.getMessage e))
+      {:errors {:sql [(.getMessage e)]}})))
 
 (defn transaction
   [ds queries]

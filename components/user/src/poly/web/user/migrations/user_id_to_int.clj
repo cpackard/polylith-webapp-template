@@ -2,7 +2,6 @@
   "Migration file to create the `users `table."
   (:require
    [clojure.spec.alpha :as s]
-   [honey.sql :as hsql]
    [poly.web.sql.interface :as sql]
    [poly.web.sql.interface.helpers :refer [alter-column alter-table]]
    [poly.web.sql.interface.spec :as spec]))
@@ -26,7 +25,6 @@
                                        :set [:default [:nextval "users__id__seq"]]))
         type->seq    {:raw "ALTER SEQUENCE users__id__seq OWNED BY users.id;"}]
     (doseq [q [new-seq drop-default new-type default-val type->seq]]
-      (-> q hsql/format println)
       (sql/query q {} ds))))
 
 (s/fdef migrate-down
@@ -47,7 +45,6 @@
                                         [:gen_random_uuid]))
         drop-seq {:raw "DROP SEQUENCE users__id__seq CASCADE"}]
     (doseq [q [drop-default rollback-users reset-default drop-seq]]
-      (-> q hsql/format println)
       (sql/query q {} ds))))
 
 (comment
