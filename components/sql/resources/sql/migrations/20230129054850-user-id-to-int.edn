@@ -1,0 +1,4 @@
+{:ns poly.web.user.migrations.user-id-to-int
+ :up-fn migrate-up
+ :down-fn migrate-down
+ :transaction? true}
