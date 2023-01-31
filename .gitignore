@@ -36,6 +36,7 @@ projects/**/pom.xml
 .clj-kondo/.cache
 .clj-kondo/**/config.edn
 .clj-kondo/**/next_jdbc.clj
+.clj-kondo/**/encore.clj
 
 # Calva VS Code Extension
 .calva/output-window/output.calva-repl

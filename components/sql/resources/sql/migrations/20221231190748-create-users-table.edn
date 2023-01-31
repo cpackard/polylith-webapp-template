@@ -1,0 +1,4 @@
+{:ns poly.web.user.migrations.create-users-table
+ :up-fn migrate-up
+ :down-fn migrate-down
+ :transaction? true}

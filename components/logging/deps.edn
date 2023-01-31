@@ -1,8 +1,22 @@
 {:paths ["src" "resources"]
- :deps {io.pedestal/pedestal.log {:mvn/version "0.5.11-snapshot-1"}
-        ch.qos.logback/logback-classic {:mvn/version "1.4.4" :exclusions [org.slf4j/slf4j-api]}
-        org.slf4j/jul-to-slf4j {:mvn/version "2.0.3"}
-        org.slf4j/jcl-over-slf4j {:mvn/version "2.0.3"}
-        org.slf4j/log4j-over-slf4j {:mvn/version "2.0.3"}}
+ :deps {;; main logging library
+        com.taoensso/timbre {:mvn/version "6.0.4"}
+        ;; Allows Timbre to receive log messages emitted by code designed to use SLF4J.
+        com.fzakaria/slf4j-timbre {:mvn/version "0.3.21" :exclusions [org.slf4j/slf4j-api]}
+
+        ;; SLF4J provider so other `slf4j` libraries can hook into Timbre.
+        ;; ch.qos.logback/logback-classic {:mvn/version "1.4.5"}
+        ;; ch.qos.logback/logback-classic {:mvn/version "1.4.5" :exclusions [org.slf4j/slf4j-api]}
+
+        ;; SLF4J API for Timbre
+        org.slf4j/slf4j-api {:mvn/version "1.7.36"}
+
+        ;; slf4j-timbre can receive logs from projects designed around Log4j,
+        ;; java.util.logging (JUL), and Apache Commons Logging (JCL).
+        ;; These libraries forward logs from Log4j/JUL/JCL projects to SLF4J,
+        ;; which in turn forwards them to Timbre.
+        org.slf4j/jul-to-slf4j {:mvn/version "1.7.36"}
+        org.slf4j/jcl-over-slf4j {:mvn/version "1.7.36"}
+        org.slf4j/log4j-over-slf4j {:mvn/version "1.7.36"}}
  :aliases {:test {:extra-paths ["test"]
                   :extra-deps {}}}}

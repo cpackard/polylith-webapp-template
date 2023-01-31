@@ -16,8 +16,8 @@ This component currently uses:
 
 This project assumes you have a [PostgreSQL](https://www.postgresql.org/) instance running with the following settings:
 - host: `localhost`
-- port: `5432`
-- database (name): `postgres`
+- port: `6432`
+- database (name): `app`
 - user: `pguser`
 - password `pgpass`
 
@@ -27,33 +27,28 @@ See [sql/config.edn](resources/sql/config.edn) for full settings.
 
 This component currently uses [migratus](https://github.com/yogthos/migratus) as the migration framework and [clj-migratus](https://github.com/paulbutcher/clj-migratus) as the CLI migration runner.
 
-### Invoking Commands
-
-Migration commands can be invoked either from a connected REPL (*recommended* - see [migratus.clj](src/poly/web/sql/migratus.clj) for full examples of each command) or from the CLI at the root of the repo:
-
-```shell
-clj -M:migrate <COMMAND>
-```
-
-See the [migratus usage docs](https://github.com/yogthos/migratus#usage) for full documentation.
-
 ### Creating Migrations
 
 `Migratus` allows for code-based migrations which integrate well with the Polylith architecture. An example of the workflow is given below; see the [migratus docs](https://github.com/yogthos/migratus#defining-a-code-based-migration) for more details.
 
-#### Generate the migration file
+To create a new migration, run the `sql/create-migration!` function with two arguments:
 
-This will create an empty `.edn` file in the folder specified by the `:migrations-dir` key in the [migratus.clj](src/poly/web/sql/migratus.clj) file. Here we give an example name "create-users-table" for the migration, so the full name of the generated file will look like '20111202091200-add-users.edn'.
+1. A dash-separated name for your migration, and
+2. A string or quoted symbol that resolves to a `migrations` directory at the root level of any component.
 
 ```clojure
-(require '[migratus.core :as migratus])
-(require '[poly.web.sql.migratus :as sqlm])
-(migratus/create sqlm/config "create-users-table" :edn)
+(require '[poly.web.sql.interface :as sql])
+(sql/create-migration! "create-users-table" 'poly.web.user.migrations)
 ```
 
-#### Populate the migration file
+#### Generate the migration file
 
-Open the generated `.edn` file from the previous step and add the following:
+The above function creates two new files:
+
+1. An EDN file like `20221231190748-create-users-table.edn`, a second-level timestamp prefixed to the migration name, and
+2. A Clojure file with the name of your migration located in your migration namespace, like `components/user/src/poly/web/user/migrations/create_users_table.clj`.
+
+The generated `.edn` file looks like this. You normally won't have to edit this, but you can view the Migratus docs for more info on their meaning and use.
 
 ```clojure
 {:ns poly.web.user.migrations.create-users-table
@@ -64,18 +59,16 @@ Open the generated `.edn` file from the previous step and add the following:
 
 #### Creating the migration commands
 
-Next, define the migration commands in the same namespace as specified in the `:ns` key of the `.edn` file from the previous step. These files should live in the appropriate component's `migrations/` folder.
-
-In the below example, the actual file would be `components/user/src/poly.web/user/migrations/create_users_table.clj`:
+Below is an example of the default generated migration file. The only required functions are `migrate-up` and `migrate-down` (or the corresponding names of `:up-fn` and `:down-fn`) which take a single `config` parameter. Inside these functions you can run anything you like to apply or rollback your migration.
 
 ```clojure
 (ns poly.web.user.migrations.create-users-table
-  "Migration file to create the `users` table."
+  "Migration file to create the `users `table."
   (:require
    [clojure.spec.alpha :as s]
    [poly.web.sql.interface :as sql]
    [poly.web.sql.interface.spec :as spec]
-   [honey.sql.helpers :refer [create-table drop-table with-columns]]))
+   [poly.web.sql.interface.helpers :refer [create-table drop-table with-columns]]))
 
 (s/fdef migrate-up
   :args (s/cat :config ::spec/migratus-config))
@@ -83,10 +76,10 @@ In the below example, the actual file would be `components/user/src/poly.web/use
 (defn migrate-up
   [config]
   (let [ds    (:db config)
-        table (-> (create-table :users :if-not-exists)
+        table (-> (create-table :test_users :if-not-exists)
                   (with-columns [[:id :uuid [:not nil] [:primary-key]]
                                  [:name [:varchar 255] [:constraint :users--name] :unique]]))]
-    (sql/query ds table)))
+    (sql/query table {} ds)))
 
 (s/fdef migrate-down
   :args (s/cat :config ::spec/migratus-config))
@@ -94,13 +87,12 @@ In the below example, the actual file would be `components/user/src/poly.web/use
 (defn migrate-down
   [config]
   (let [ds (:db config)]
-    (sql/query ds (drop-table :users))))
+    (sql/query (drop-table :test_users) {} ds)))
 
 (comment
   (do
-    (require '[poly.web.sql.migratus :as sqlm])
-    (require '[migratus.core :as migratus])
-    (migratus/migrate sqlm/config)))
+    ;(require '[poly.web.sql.interface :as sql])
+    (sql/migrate!)))
 ```
 
 Note the `comment` form at the bottom of the file - with this you can send that expression to the REPL and run the migrations directly afterwards.

@@ -1,0 +1,9 @@
+{:poly.web.rest-api.core/service-map {:pool #ig/ref :poly.web.sql.interface/db-pool
+                                      :reloadable? #profile {#{:dev :test} true
+                                                             :default false}
+                                      :extras #profile {:dev {:io.pedestal.http/join? false}
+                                                        :test {:io.pedestal.http/join? false
+                                                               :io.pedestal.http/port 0}
+                                                        :default {}}}
+
+ :poly.web.rest-api.core/server {:service-map #ig/ref :poly.web.rest-api.core/service-map}}

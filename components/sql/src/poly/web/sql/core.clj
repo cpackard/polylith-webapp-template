@@ -1,61 +1,86 @@
 (ns poly.web.sql.core
   "Implementation of functionality for the `sql` component."
   (:require
-   [clojure.spec.alpha :as s]
    [honey.sql :as sql]
    [next.jdbc :as jdbc]
    [next.jdbc.connection :as connection]
+   [next.jdbc.result-set :as rs]
    [next.jdbc.sql :as jdbc-sql]
-   [poly.web.sql.interface.spec :as sql-spec]
-   [poly.web.sql.spec :as spec])
+   [poly.web.logging.interface :as log])
   (:import
-   (com.zaxxer.hikari HikariDataSource)))
+   (com.zaxxer.hikari HikariDataSource)
+   (java.sql ResultSet ResultSetMetaData)))
 
-(s/fdef create-pool
-  :args (s/cat :db-spec ::sql-spec/db-spec))
+(def ^:private db-pool
+  "Private reference to the DB connection pool."
+  (atom nil))
 
-(defn create-pool
+(defn ds
+  "Helper function to access the DB connection pool"
+  []
+  @db-pool)
+
+(defn default-column-reader
+  "Reads the raw response from SQL and optionally performs conversions."
+  [^ResultSet rs ^ResultSetMetaData rsmeta ^Integer i]
+  (try
+    (let [ct (.getColumnTypeName rsmeta i)
+          row (.getObject rs i)]
+      (cond (nil? row) row
+            ;; (= "date" ct) (jt/local-date row)
+            ;; (= "timestamptz" ct) (.toInstant row)
+            :else row))
+    (catch Exception e
+      (log/info (.getMessage e)))))
+
+(defn init-pool
   [db-spec]
-  (let [ds (connection/->pool HikariDataSource db-spec)]
-    (jdbc/with-options ds {:label-fn     (:label-fn jdbc/snake-kebab-opts)})))
-
-(s/fdef close-pool
-  :args (s/cat :datasource spec/connectable))
+  (if-let [pool @db-pool]
+    pool
+    (let [opts (merge jdbc/snake-kebab-opts
+                      {:builder-fn (rs/as-maps-adapter rs/as-modified-maps
+                                                       default-column-reader)})
+          new-pool (-> (connection/->pool HikariDataSource db-spec)
+                       (jdbc/with-options opts))]
+      (reset! db-pool new-pool))))
 
 (defn close-pool
   "Close the database pool `datasource`."
-  [datasource]
-  (.close (:connectable datasource)))
-
-(s/fdef query
-  :args (s/cat :ds spec/connectable
-               :query map?))
+  [pool]
+  (when (identical? pool @db-pool)
+    (reset! db-pool nil))
+  (.close (:connectable pool)))
 
 (defn query
   "Run the given SQL query string and query params"
-  [ds sql-query & opts]
+  [sql-query opts ds]
   (jdbc-sql/query ds
                   (sql/format sql-query)
-                  (merge {:timeout 2
-                          :qualifier-fn (fn [_] str "projects")}
-                         opts)))
-
-(s/fdef query-one
-  :args (s/cat :ds spec/connectable
-               :query map?)
-  :ret (complement sequential?))
+                  (merge {:timeout 2} opts)))
 
 (defn query-one
   "Same as the `query` function, but only returns the first matching row."
-  [ds sql-query & opts]
-  (first (apply query ds sql-query opts)))
+  [sql-query opts ds]
+  (first (query sql-query opts ds)))
 
-(s/fdef transaction
-  :args (s/cat :ds ::spec/connectable
-               :queries (s/+ map?)))
+(defn insert!
+  [table row opts ds]
+  (try
+    (jdbc-sql/insert! ds table row opts)
+    (catch Exception e
+      (log/warn "Unable to add row to db."
+                :row row
+                :table table
+                :exc-msg (.getMessage e))
+      {:errors {:sql [(.getMessage e)]}})))
 
 (defn transaction
   [ds queries]
   (jdbc/with-transaction [tx ds]
     (doseq [query queries]
       (jdbc/execute! tx (sql/format query)))))
+
+(defn create-index
+  "Wrapper function to help with constructing CREATE INDEX queries."
+  [index-name table column]
+  {:create-index [index-name [table column]]})

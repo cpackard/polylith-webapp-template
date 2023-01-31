@@ -1,16 +1,31 @@
 (ns poly.web.logging.core
   (:require
-   [io.pedestal.log :as log]))
+   [taoensso.timbre :as timbre]))
 
-;; inspired by https://github.com/furkan3ayraktar/clojure-polylith-realworld-example-app/blob/master/components/log/src/clojure/realworld/log/core.clj#L10
+(defmacro debug
+  [& args]
+  `(timbre/debug ~@args))
+
 (defmacro info
-  [msg]
-  `(log/info :msg ~msg))
+  [& args]
+  `(timbre/info ~@args))
 
 (defmacro warn
-  [msg]
-  `(log/warn :msg ~msg))
+  [& args]
+  `(timbre/warn ~@args))
 
 (defmacro error
-  [msg]
-  `(log/error :msg ~msg))
+  [& args]
+  `(timbre/error ~@args))
+
+(defmacro with-config
+  [config & body]
+  `(timbre/with-config ~config ~@body))
+
+(defmacro with-merged-config
+  [config & body]
+  `(timbre/with-merged-config ~config ~@body))
+
+(defmacro merge-config!
+  [config]
+  `(timbre/merge-config! ~config))

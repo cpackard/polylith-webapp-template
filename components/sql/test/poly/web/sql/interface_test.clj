@@ -1,36 +1,35 @@
 (ns poly.web.sql.interface-test
   (:require
    [clojure.java.io :as io]
-   [clojure.string :as string]
-   [clojure.test :as test :refer [deftest is use-fixtures]]
-   [honey.sql.helpers :refer [from select where]]
-   [migratus.core :as migratus]
+   [clojure.string :as str]
+   [clojure.test :as test :refer [deftest is testing use-fixtures]]
+   [poly.web.logging.interface.test-utils :as log-tu]
    [poly.web.sql.interface :as sql]
-   [poly.web.sql.migratus :as sql-m]))
+   [poly.web.sql.interface.helpers :refer [from select where]]
+   [poly.web.sql.interface.test-utils :as sql-tu]
+   [poly.web.sql.migratus :as sql-m]
+   [poly.web.test-utils.interface :as tu]))
 
-(def config (merge sql-m/config
-                   {:migration-dir (re-find #"components.*" (str (io/resource "sql/test-migrations/")))}))
+(def ^:private test-db-name "poly_web_sql_interface_test")
 
-(defn migration-files
-  "Return a seq of all migration files."
-  []
-  (->> (io/file (:migration-dir config))
-       (file-seq)
-       (filter (fn [f] (string/ends-with? (str f) ".edn")))))
+(def ^:private config
+  "custom `migratus` config - overrides certain properties for testing."
+  (let [table-name "test_app_migrations"
+        directory (re-find #"components.*"
+                           (str (io/resource "sql/test-migrations/")))]
+    (-> sql-m/config
+        (merge {:migration-table-name table-name :migration-dir directory})
+        (assoc-in [:db :dbname] test-db-name))))
 
-(defn prepare-for-tests
-  [f]
-  (let [migration-cleanup (fn []
-                            (doseq [file (migration-files)]
-                              (when (string/ends-with? file ".edn")
-                                (io/delete-file file true))))]
-    (migration-cleanup)
-    (f)
-    (migration-cleanup)))
+(use-fixtures :once
+  (log-tu/set-log-config)
+  (sql-tu/with-db! test-db-name)
+  tu/pretty-spec!)
 
-(use-fixtures :each prepare-for-tests)
+(use-fixtures :each
+  (sql-tu/migration-cleanup! config))
 
-(defn table-exists?
+(defn- table-exists?
   [table-name]
   (select [[:exists (-> (select)
                         (from [:information_schema.tables])
@@ -39,25 +38,20 @@
                                 [:= :table_name table-name]]))]]))
 
 (deftest verify--migrations--create--migrate--rollback
-  ; create a migration file
-  (migratus/create config "create-users-table" :edn)
-  ; find the migration file
-  (let [migration-file (str (first (migration-files)))
-        ;; NOTE: the `:ns` and `:-fn` keys are only quoted here
-        ;; because this is written in a `.clj` file.
-        ;; Quotes are *not* needed for migrations
-        ;; written directly in their generated `.edn` files.
-        create-users-cfg '{:ns poly.web.sql.migrations.create-users-table
-                           :up-fn migrate-up
-                           :down-fn migrate-down
-                           :transaction? true}
-        ds (:db config)]
-    ; write contents of the migration config to the migration file
-    (spit migration-file (with-out-str (pr create-users-cfg)))
-    (is (= 1 (count (migratus/pending-list config))))
+  (testing "can create the migration files"
+    (let [migration-ns (sql/create-migration! "create-users-table"
+                                              'poly.web.sql.migrations
+                                              config)]
+      (is (= 1 (count (sql/pending-migrations config))))
+      (-> migration-ns (str/replace #"-" "_") (str/replace #"\." "/") (str ".clj")
+          io/resource
+          io/delete-file)))
 
-    (migratus/migrate config)
-    (is (= true (:exists (sql/query-one ds (table-exists? "users")))))
+  (let [ds (:db config)]
+    (testing "can run the generated migrations"
+      (sql/migrate! config)
+      (is (= true (:exists (sql/query-one (table-exists? "test_users") {} ds)))))
 
-    (migratus/rollback config)
-    (is (= false (:exists (sql/query-one ds (table-exists? "users")))))))
+    (testing "can rollback the migrations"
+      (sql/rollback! config)
+      (is (= false (:exists (sql/query-one (table-exists? "test_users") {} ds)))))))

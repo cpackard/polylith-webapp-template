@@ -2,10 +2,28 @@
   "Public interface for spec definitions of the `sql` component."
   (:require
    [clojure.spec.alpha :as s]
-   [poly.web.sql.spec :as spec]))
+   [next.jdbc.protocols :as p]))
 
-(s/def ::connectable spec/connectable)
+(def connectable (s/or :connectable #(satisfies? p/Connectable %)
+                       :sourceable #(satisfies? p/Sourceable %)))
 
-(s/def ::db-spec spec/db-spec)
+(def db-spec (s/keys :req-un [::dbtype ::dbname]
+                     :opt-un [::classname
+                              ::user ::password
+                              ::host ::port
+                              ::dbname-separator
+                              ::host-prefix]))
 
-(s/def ::migratus-config spec/migratus-config)
+(s/def ::store keyword?)
+(s/def ::migration-dir string?)
+(s/def ::migration-table-name string?)
+(s/def ::db db-spec)
+
+(s/def ::connectable connectable)
+
+(s/def ::db-spec db-spec)
+
+(s/def ::migratus-config (s/keys :req-un [::store
+                                          ::migration-dir
+                                          ::migration-table-name
+                                          ::db]))
