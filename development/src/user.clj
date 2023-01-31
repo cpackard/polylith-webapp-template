@@ -103,20 +103,18 @@
           (interceptor-info
             [i]
             (let [iname  (or (:name i) "<handler>")
-                  stages (joined-by
-                          ","
-                          (keys
-                           (filter
-                            (comp (complement nil?) val)
-                            (dissoc i :name))))]
+                  stages (->> (dissoc i :name)
+                              (filter (comp (complement nil?) val))
+                              keys
+                              (joined-by ","))]
               (str iname " (" stages ")")))]
     (when-let [rte (named-route rname)]
       (let [{:keys [path method route-name interceptors]} rte
             name-line (str "[" method " " path " " route-name "]")]
-        (joined-by
-         "\n"
-         (into [name-line (repeat-str "-" (count name-line))]
-               (map interceptor-info interceptors)))))))
+        (->> (into [name-line (repeat-str "-" (count name-line))]
+                   (map interceptor-info interceptors))
+             (joined-by "\n")
+             println)))))
 
 (defn recognize-route
   "Verifies the requested HTTP verb and path are recognized by the router."

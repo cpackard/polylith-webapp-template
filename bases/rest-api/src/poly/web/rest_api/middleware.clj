@@ -84,8 +84,8 @@
     (fn [context]
       (if (get-in context [:request :auth-user])
         context
-        (assoc context :response {:status 401
-                                  :body   {:errors {:authorization "Authorization required."}}})))}))
+        (let [auth-err {:errors {:auth ["Authorization required."]}}]
+          (assoc context :response {:status 401 :body auth-err :headers {}}))))}))
 
 (def err-handler
   (err/error-dispatch

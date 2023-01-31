@@ -25,16 +25,19 @@
 
 (def ok (partial response 200))
 (def not-found (partial response 404))
+(def forbidden (partial response 403))
 (def bad-request (partial response 400))
 (def bad-entity (partial response 422))
 
 (defn- response-code
   "Choose the appropriate response code function for the given response."
   [{:keys [errors] :as res}]
-  (cond
-    (:request-err errors) (bad-entity res)
-    errors (bad-request res)
-    :else (ok res)))
+  (let [{:keys [request-err auth]} errors]
+    (cond
+      request-err (bad-entity res)
+      auth        (forbidden res)
+      errors      (bad-request res)
+      :else       (ok res))))
 
 (defn- qualify-kws
   "Qualify all keys in `m` with the namespace `ns`"
@@ -70,6 +73,19 @@
      (let [{:keys [email password]} (get-in context
                                             [:request :json-params :user])]
        (->> (user/login email password)
+            response-code
+            (assoc context :response))))})
+
+(def user-info
+  "Retrieve all relevant info for a given user."
+  {:name :user-info
+   :enter
+   (fn [context]
+     (let [{::user-s/keys [token id]} (get-in context [:request :auth-user])
+           req-id                     (get-in context [:request :path-params :user-id])]
+       (->> (if-not (= id (Integer/parseInt req-id))
+              {:errors {:auth ["Permission denied."]}}
+              (user/user-by-token token))
             response-code
             (assoc context :response))))})
 

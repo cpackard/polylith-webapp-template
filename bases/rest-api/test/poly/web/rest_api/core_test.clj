@@ -9,7 +9,7 @@
    [io.pedestal.test :refer [response-for]]
    [poly.web.config.interface :as cfg]
    [poly.web.logging.interface.test-utils :as log-tu]
-   [poly.web.rest-api.core :as core]
+   [poly.web.rest-api.core :as api-core]
    [poly.web.spec.interface.test-utils :as spec-tu]
    [poly.web.sql.interface :as sql]
    [poly.web.sql.interface.test-utils :as sql-tu]
@@ -28,10 +28,10 @@
   (fn [f]
     (let [sys (-> ["sql/config.edn" "auth/config.edn" "rest-api/config.edn" "logging/config.edn"]
                   (cfg/parse-cfgs {:profile :test})
-                  (dissoc ::core/server)
+                  (dissoc ::api-core/server)
                   (assoc-in [::sql/db-spec :dbname] db-name)
                   cfg/init)
-          service-fn (-> sys ::core/service-map http/create-servlet ::http/service-fn)]
+          service-fn (-> sys ::api-core/service-map http/create-servlet ::http/service-fn)]
       (reset! service service-fn)
 
       (f)
@@ -59,34 +59,65 @@
 ;;   (deftest user
 ;;     (let [user (gen/generate (s/gen ::user-t/registered-user))])))
 
+(defn- res-for
+  "Helper function around `response-for`.
+
+  Automatically adds necessary headers and converts `body` to JSON."
+  [verb path & {:keys [body token]}]
+  (let [headers (cond-> {"Content-Type" "application/json"
+                         "Accept"       "application/json"}
+                  token (merge {"Authorization" (str "Bearer " token)}))
+        args    (cond-> [verb path]
+                  body    (concat [:body (json/write-str body)])
+                  :always (concat [:headers headers]))]
+    (apply response-for @service args)))
+
 ;; TODO: I don't like the look of these nested tests 🤔
 (deftest user
   (testing "/api/users"
     (let [user (gen/generate (s/gen ::user/new-user))]
       (testing "can register a user successfully"
         (let [{:keys [status]}
-              (response-for @service
-                            :post "/api/users"
-                            :body (json/write-str {:user user})
-                            :headers {"Content-Type" "application/json"})]
+              (res-for :post "/api/users" :body {:user user})]
           (is (= 200 status))))
       (testing "handles bad request (missing email)"
         (let [{:keys [status body]}
-              (response-for @service
-                            :post "/api/users"
-                            :body (json/write-str {:user (dissoc user ::user-s/email)})
-                            :headers {"Content-Type" "application/json"})]
-          (is (string/includes? body "should contain key: :poly.web.user.interface.spec/email"))
+              (res-for :post "/api/users" :body {:user (dissoc user ::user-s/email)})]
+          (is (string/includes? body "should contain key: :poly.web.user.interface.spec\\/email"))
           (is (= 422 status))))))
-  (testing "/api/users/login/:id"
+  (testing "/api/users/:user-id/login"
     (let [email (spec-tu/gen-email)
           user  (user-tu/new-user! ::user-s/email email)]
       (testing "can login with a registered user"
         (let [{:keys [status body]}
-              (response-for @service
-                            :post (str "/api/users/login/" (::user-s/id user))
-                            :body (json/write-str {:user user})
-                            :headers {"Content-Type" "application/json"
-                                      "Accept"       "application/json"})]
+              (res-for :post (str "/api/users/" (::user-s/id user) "/login")
+                       :body {:user user})]
           (is (= 200 status))
           (is (some? (-> body json/read-str (get "token")))))))))
+
+(deftest user-info
+  (testing "receives an Unauthorized error without authentication"
+    (let [{:keys [status body]} (res-for :get "/api/users/1")]
+      (is (= 401 status))
+      (is (= {"errors" {"auth" ["Authorization required."]}}
+             (json/read-str body)))))
+  (testing "receives a Forbidden error with insufficient permissions"
+    (let [email                      (spec-tu/gen-email)
+          {::user-s/keys [token id]} (user-tu/new-user! ::user-s/email email)
+          {:keys [status body]}      (res-for :get (str "/api/users/" (inc id))
+                                              :token token)]
+      (is (= 403 status))
+      (is (= {"errors" {"auth" ["Permission denied."]}}
+             (json/read-str body)))))
+  (testing "can successfully read user info"
+    (let [email
+          (spec-tu/gen-email)
+
+          {::user-s/keys [token id name email username]}
+          (user-tu/new-user! ::user-s/email email)
+
+          {:keys [status body]}
+          (res-for :get (str "/api/users/" id) :token token)]
+      (is (= 200 status))
+      (is (= {:id id :name name :email email :username username :token token}
+             (json/read-str body :key-fn keyword))))))
