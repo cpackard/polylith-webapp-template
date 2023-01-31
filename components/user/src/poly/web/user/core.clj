@@ -34,18 +34,18 @@
       (dissoc ::user-s/password)))
 
 (defn login
-  [email password]
+  [email password secret]
   (let [user        (store/find-by-email email)
         validations (some-fn validators/has-email?
                              (partial validators/password-match? password)
-                             #(->> (::user-s/username %)
-                                   (auth/generate-token email)
-                                   (user->visible-user user)))]
+                             #(-> (::user-s/username %)
+                                  (as-> username (auth/generate-token email username secret))
+                                  (as-> token (user->visible-user user token))))]
     (validations user)))
 
 (defn user-by-token
-  [token]
-  (if-let [user (-> (auth/token->claims token)
+  [token secret]
+  (if-let [user (-> (auth/token->claims token secret)
                     :sub
                     store/find-by-username)]
     (user->visible-user user token)
@@ -67,11 +67,11 @@
         (recur res fns)))))
 
 (defn register!
-  [{::user-s/keys [username email password] :as req-user}]
+  [{::user-s/keys [username email password] :as req-user} secret]
   (let [new-user    (assoc req-user
                            ::user-s/password
                            (auth/encrypt-password password))
-        new-token (auth/generate-token email username)]
+        new-token (auth/generate-token email username secret)]
     (process new-user
              validators/existing-email?
              validators/existing-username?

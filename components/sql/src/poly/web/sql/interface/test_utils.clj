@@ -5,13 +5,12 @@
    [clojure.string :as string]
    [poly.web.config.interface :as cfg]
    [poly.web.sql.interface :as sql]
-   [poly.web.sql.migrations :as migrations]
-   [poly.web.sql.migratus :as sql-m]))
+   [poly.web.sql.migrations :as migrations]))
 
 (defn- create-sys-cfg
   "Merge all configs needed for creating the test DB."
   [& {:keys [configs]
-      :or {configs ["sql/config.edn" "auth/config.edn"]}}]
+      :or {configs [(io/resource "rest-api/config.edn")]}}]
   (cfg/parse-cfgs configs {:profile :test}))
 
 (defn- start-db-pool!
@@ -20,7 +19,7 @@
   (let [sys (-> sys-cfg
                 (assoc-in [::sql/db-spec :dbname] db-name)
                 cfg/init)
-        migratus-cfg (assoc-in sql-m/config [:db :dbname] db-name)]
+        migratus-cfg (assoc-in migrations/config [:db :dbname] db-name)]
     [sys migratus-cfg]))
 
 (s/def ::db-name string?)
@@ -62,7 +61,7 @@
   "Delete the SQL migration table
   and all `.edn` files in the migration directory."
   ([]
-   (migration-cleanup! sql-m/config))
+   (migration-cleanup! migrations/config))
   ([config]
    (let [migration-table (keyword (:migration-table-name config))
          ds              (:db config)

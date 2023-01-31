@@ -6,6 +6,7 @@
    [clojure.test :as test :refer [deftest is testing use-fixtures]]
    [expound.alpha :as expound]
    [poly.web.auth.interface :as auth]
+   [poly.web.logging.interface.test-utils :as log-tu]
    [poly.web.spec.interface :as spec]))
 
 (defn prep-expound-for-tests
@@ -13,7 +14,15 @@
   (set! s/*explain-out* expound/printer)
   (f))
 
-(use-fixtures :once prep-expound-for-tests)
+(def ^:private silenced-ns #{"com.zaxxer.*"
+                             "migratus.*"
+                             "io.pedestal.*"
+                             "poly.web.auth.*"})
+(def ^:private log-cfg {:min-level [[silenced-ns :error]]})
+
+(use-fixtures :once
+  prep-expound-for-tests
+  (log-tu/set-log-config log-cfg))
 
 (s/fdef spec-test
   :args (s/cat :sym qualified-symbol?))

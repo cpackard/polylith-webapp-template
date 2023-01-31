@@ -7,22 +7,25 @@
 
 (s/fdef generate-token
   :args (s/cat :email spec/email?
-               :username spec/non-empty-string?)
+               :username spec/non-empty-string?
+               :secret ::auth-s/secret?)
   :ret ::auth-s/jwt-str?)
 
 (defn generate-token
   "Generate an authentication token for the given user's email and username."
-  [email username]
-  (core/generate-token email username))
+  [email username secret]
+  (core/generate-token email username secret))
 
 (s/fdef token->claims
-  :args (s/cat :jwt ::auth-s/jwt-str?)
-  :ret ::auth-s/jwt)
+  :args (s/cat :jwt ::auth-s/jwt-str?
+               :secret ::auth-s/secret?)
+  :ret (s/or :token ::auth-s/jwt
+             :error ::spec/errors))
 
 (defn token->claims
   "Return all claims for the given token (as a string)."
-  [jwt]
-  (core/token->claims jwt))
+  [jwt secret]
+  (core/token->claims jwt secret))
 
 (s/fdef encrypt-password
   :args (s/cat :password spec/password?)

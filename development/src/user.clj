@@ -1,6 +1,7 @@
 #_{:clj-kondo/ignore [:unused-namespace :unused-referred-var]}
 (ns user
   (:require
+   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as gen]
    [clojure.spec.test.alpha :as st]
@@ -23,22 +24,27 @@
    [poly.web.logging
     [core :as log-core]
     [interface :as log]]
+   [poly.web.logging.interface
+    [test-utils :as log-tu]]
    [poly.web.rest-api
     [handler :as handler]
     [api :as api]
+    [interface :as rest-api]
     [middleware :as middleware]
     [core :as api-core]
     [spec :as api-spec]]
    [poly.web.spec
+    [test-utils :as spec-tu]
     [interface :as spec]
     [core :as spec-core]]
    [poly.web.sql
     [core :as sql-core]
     [interface :as sql]
-    [migratus :as sql-m]]
+    [migrations :as sql-m]]
    [poly.web.sql.interface
     [helpers :as sql-h]
-    [spec :as sql-s]]
+    [spec :as sql-s]
+    [test-utils :as sql-tu]]
    [poly.web.test-utils
     [core :as test-utils-core]
     [interface :as test-utils]]
@@ -47,14 +53,11 @@
     [interface :as user]
     [store :as user-store]]
    [poly.web.user.interface
-    [spec :as user-s]]))
+    [spec :as user-s]
+    [test-utils :as user-tu]]))
 
 (integrant.repl/set-prep!
- (fn [] (cfg/parse-cfgs ["sql/config.edn"
-                         "auth/config.edn"
-                         "rest-api/config.edn"
-                         "logging/config.edn"]
-                        {:profile :dev})))
+ (fn [] (cfg/parse-cfgs [(io/resource "rest-api/config.edn")] {:profile :dev})))
 
 (defn setup
   []

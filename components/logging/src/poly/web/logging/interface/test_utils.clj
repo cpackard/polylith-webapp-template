@@ -15,8 +15,11 @@
   (->> (partial mapv as-pprint-str)
        (update data :vargs)))
 
+(def ^:private silenced-ns
+  #{"com.zaxxer.*" "migratus.*" "io.pedestal.*"})
+
 (def default-config
-  {:min-level [[#{"com.zaxxer.*" "migratus.*" "io.pedestal.*"} :error]]
+  {:min-level [[silenced-ns :error]]
    :middleware [maybe-pprint]})
 
 (defn set-log-config

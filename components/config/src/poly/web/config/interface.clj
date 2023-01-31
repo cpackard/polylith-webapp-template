@@ -4,6 +4,8 @@
    [poly.web.config.core :as core]
    [poly.web.config.interface.spec :as spec]))
 
+(def default-secret-value "default-secret-please-change!")
+
 (s/def ::opts (s/keys :req-un [::spec/profile]))
 
 (s/fdef config
@@ -11,12 +13,12 @@
                :opts (s/? ::opts))
   :ret map?)
 
-(defn config
+(defn parse
   "Parse the given configuration with any of the specified options."
   ([cfg]
-   (config cfg {:profile :default}))
+   (parse cfg {:profile :default}))
   ([cfg opts]
-   (core/config cfg opts)))
+   (core/parse cfg opts)))
 
 (s/fdef parse-cfgs
   :args (s/cat :cfg (s/coll-of string?)
@@ -27,14 +29,6 @@
   "Parse all configs requested in `cfgs` into a single merged map."
   [cfgs opts]
   (core/parse-cfgs cfgs opts))
-
-(s/fdef env
-  :args (s/cat :key keyword?))
-
-(defn env
-  "Read a value from the app environment."
-  [key]
-  (core/env key))
 
 (s/fdef init
   :args (s/cat :cfg map?)
@@ -47,7 +41,5 @@
 
 (defn halt!
   "Stop the app's running dependencies."
-  ([]
-   (core/halt!))
-  ([sys]
-   (core/halt! sys)))
+  [sys]
+  (core/halt! sys))

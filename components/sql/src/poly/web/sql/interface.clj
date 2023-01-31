@@ -1,31 +1,10 @@
 (ns poly.web.sql.interface
   (:require
    [clojure.spec.alpha :as s]
-   [integrant.core :as ig]
    [poly.web.spec.interface :as spec]
    [poly.web.sql.core :as core]
    [poly.web.sql.interface.spec :as sql-s]
    [poly.web.sql.migrations :as migrations]))
-
-(defmethod ig/pre-init-spec ::db-spec
-  [_]
-  sql-s/db-spec)
-
-(defmethod ig/pre-init-spec ::db-pool
-  [_]
-  (s/keys :req-un [::sql-s/db-spec]))
-
-(defmethod ig/init-key ::db-spec
-  [_ db-spec]
-  db-spec)
-
-(defmethod ig/init-key ::db-pool
-  [_ {:keys [db-spec]}]
-  (core/init-pool db-spec))
-
-(defmethod ig/halt-key! ::db-pool
-  [_ pool]
-  (core/close-pool pool))
 
 (s/fdef init-pool
   :args (s/cat :db-spec ::sql-s/db-spec))

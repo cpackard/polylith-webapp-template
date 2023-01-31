@@ -5,8 +5,9 @@
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as gen]
    [clojure.test :as test :refer [deftest is testing use-fixtures]]
+   [poly.web.config.interface :as cfg]
    [poly.web.logging.interface.test-utils :as log-tu]
-   [poly.web.spec.interface.test-utils :as spec-tu]
+   [poly.web.spec.test-utils :as spec-tu]
    [poly.web.sql.interface.test-utils :as sql-tu]
    [poly.web.test-utils.interface :as test-utils]
    [poly.web.user.interface :as user]
@@ -42,29 +43,29 @@
 (deftest user-by-token
   (testing "invalid tokens do not return a user"
     (is (=  {:errors {:token ["Cannot find a user with associated token."]}}
-            (user/user-by-token (gen/generate (s/gen ::user-s/token))))))
+            (user/user-by-token (gen/generate (s/gen ::user-s/token)) cfg/default-secret-value))))
   (testing "valid tokens return their user"
     (let [email (spec-tu/gen-email)
           user  (user-tu/new-user! ::user-s/email email)]
       (is (= (dissoc user ::user-s/password)
-             (user/user-by-token (::user-s/token user)))))))
+             (user/user-by-token (::user-s/token user) cfg/default-secret-value))))))
 
 (deftest login
   (testing "unregistered user cannot login"
     (let [email    (gen/generate (s/gen ::user-s/email))
           password (gen/generate (s/gen ::user-s/password))]
       (is (= {:errors {:email ["Invalid email."]}}
-             (user/login email password)))))
+             (user/login email password cfg/default-secret-value)))))
 
   (let [user     (gen/generate (s/gen ::user/new-user))
         email    (::user-s/email user)
         password (::user-s/password user)]
-    (user/register! user)
+    (user/register! user cfg/default-secret-value)
     (testing "existing user cannot login with incorrect password"
       (is (= {:errors {:password ["Invalid password."]}}
-             (user/login email "bad-password"))))
+             (user/login email "bad-password" cfg/default-secret-value))))
     (testing "existing user can login with correct password"
-      (let [visible-user (user/login email password)]
+      (let [visible-user (user/login email password cfg/default-secret-value)]
         (is (= email (::user-s/email visible-user))
             (format "Expected email %s from %s" email visible-user))
         (is (some? (::user-s/token visible-user))

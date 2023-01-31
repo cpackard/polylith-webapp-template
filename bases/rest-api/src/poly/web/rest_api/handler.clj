@@ -60,8 +60,9 @@
    (fn [context]
      (let [new-user (-> (get-in context [:request :json-params :user])
                         (qualify-kws (namespace ::user-s/id)))
+           {:keys [secret]} (get-in context [:request :env])
            response (if (s/valid? ::user/new-user new-user)
-                      (->> new-user user/register!)
+                      (user/register! new-user secret)
                       (explain-bad-req ::user/new-user new-user))]
        (assoc context :response (response-code response))))})
 
@@ -71,8 +72,9 @@
    :enter
    (fn [context]
      (let [{:keys [email password]} (get-in context
-                                            [:request :json-params :user])]
-       (->> (user/login email password)
+                                            [:request :json-params :user])
+           {:keys [secret]}         (get-in context [:request :env])]
+       (->> (user/login email password secret)
             response-code
             (assoc context :response))))})
 
@@ -82,10 +84,11 @@
    :enter
    (fn [context]
      (let [{::user-s/keys [token id]} (get-in context [:request :auth-user])
+           {:keys [secret]}           (get-in context [:request :env])
            req-id                     (get-in context [:request :path-params :user-id])]
        (->> (if-not (= id (Integer/parseInt req-id))
               {:errors {:auth ["Permission denied."]}}
-              (user/user-by-token token))
+              (user/user-by-token token secret))
             response-code
             (assoc context :response))))})
 
