@@ -11,6 +11,6 @@
         poly/rest-api                {:local/root "../../bases/rest-api"}}
 
  :aliases {:test {:extra-paths []
-                  :extra-deps  {}}
+                  :extra-deps  {poly/test-utils {:local/root "../../components/test-utils"}}}
 
            :uberjar {:main poly.web.rest-api.core}}}
