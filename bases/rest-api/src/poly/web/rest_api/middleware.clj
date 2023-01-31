@@ -96,6 +96,11 @@
    #_{:clj-kondo/ignore [:unresolved-symbol]}
    (assoc ctx :response {:status 400 :body "Not a number!\n"})
 
+   [{:exception-type :com.fasterxml.jackson.core.JsonParseException
+     :interceptor    :io.pedestal.http.body-params/body-params}]
+   #_{:clj-kondo/ignore [:unresolved-symbol]}
+   (assoc ctx :response {:status 400 :body (.getMessage ex)})
+
    :else
    #_{:clj-kondo/ignore [:unresolved-symbol]}
    (assoc ctx :io.pedestal.interceptor.chain/error ex)))
