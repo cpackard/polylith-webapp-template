@@ -7,8 +7,6 @@
                                            with-columns]]
    [poly.web.sql.interface.spec :as spec]))
 
-;; TODO: run migrations on app startup (via Integrant)
-
 (s/fdef migrate-up
   :args (s/cat :config ::spec/migratus-config))
 

@@ -5,6 +5,7 @@
    [io.pedestal.http.body-params :as body-params]
    [io.pedestal.http.route :as route]
    [poly.web.config.interface :as cfg]
+   [poly.web.logging.interface :as log]
    [poly.web.rest-api.api :as api]
    [poly.web.rest-api.middleware :as m]
    [poly.web.sql.interface :as sql]
@@ -93,6 +94,9 @@
 (defn -main
   "The entry-point for 'clojure -M:main'"
   [& args]
-  (let [component-cfgs ["sql/config.edn" "auth/config.edn" "rest-api/config.edn" "logging/config.edn"]]
+  (let [component-cfgs ["sql/config.edn" "auth/config.edn" "rest-api/config.edn" "logging/config.edn"]
+        pms            (sql/pending-migrations)]
+    (when pms
+      (log/info (str "You have " (count pms) " unapplied migrations.")))
     (-> (cfg/parse-cfgs component-cfgs {:profile :default})
         cfg/init)))
