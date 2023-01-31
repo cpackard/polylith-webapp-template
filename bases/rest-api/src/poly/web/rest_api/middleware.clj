@@ -59,7 +59,6 @@
         (sql/transaction pool queries)
         context))}))
 
-; TODO: hook these into common interceptors
 (def wrap-auth-user
   "Interceptor for adding the calling users' info
   to the request context if the provided auth token is valid."

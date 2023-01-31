@@ -9,5 +9,5 @@
 (s/def ::password spec/password?)
 (s/def ::email spec/email?)
 (s/def ::username (s/and spec/non-empty-string?
-                         (fn [s] (< (count s) 30)))) ;; TODO: how can this val come from the schema definition?
+                         (fn [s] (< (count s) 30))))
 (s/def ::token auth-s/jwt-str?)
