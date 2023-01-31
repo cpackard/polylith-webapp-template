@@ -1,7 +1,5 @@
 {:paths   ["src" "resources"]
- :deps    {;; Micro-framework for managing components with runtime state.
-           integrant/integrant             {:mvn/version "0.8.0"}
-           ;; Date / Time manipulation
+ :deps    {;; Date / Time manipulation
            clj-time/clj-time               {:mvn/version "0.15.2"}
            ;; JWT signing and unsigning
            buddy/buddy-sign                {:mvn/version "3.4.333"}

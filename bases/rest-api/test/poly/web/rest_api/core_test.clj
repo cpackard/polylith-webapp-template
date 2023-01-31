@@ -1,6 +1,7 @@
 (ns poly.web.rest-api.core_test
   (:require
    [clojure.data.json :as json]
+   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as gen]
    [clojure.string :as string]
@@ -9,8 +10,8 @@
    [io.pedestal.test :refer [response-for]]
    [poly.web.config.interface :as cfg]
    [poly.web.logging.interface.test-utils :as log-tu]
-   [poly.web.rest-api.core :as api-core]
-   [poly.web.spec.interface.test-utils :as spec-tu]
+   [poly.web.rest-api.interface :as rest-api]
+   [poly.web.spec.test-utils :as spec-tu]
    [poly.web.sql.interface :as sql]
    [poly.web.sql.interface.test-utils :as sql-tu]
    [poly.web.test-utils.interface :as test-utils]
@@ -26,12 +27,12 @@
   "Create HTTP service function for testing"
   [db-name]
   (fn [f]
-    (let [sys (-> ["sql/config.edn" "auth/config.edn" "rest-api/config.edn" "logging/config.edn"]
+    (let [sys (-> [(io/resource "rest-api/config.edn")]
                   (cfg/parse-cfgs {:profile :test})
-                  (dissoc ::api-core/server)
+                  (dissoc ::rest-api/server)
                   (assoc-in [::sql/db-spec :dbname] db-name)
                   cfg/init)
-          service-fn (-> sys ::api-core/service-map http/create-servlet ::http/service-fn)]
+          service-fn (-> sys ::rest-api/service-map http/create-servlet ::http/service-fn)]
       (reset! service service-fn)
 
       (f)

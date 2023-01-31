@@ -1,4 +1,4 @@
-(ns poly.web.spec.interface.test-utils
+(ns poly.web.spec.test-utils
   (:require
    [clojure.spec.gen.alpha :as gen]))
 

@@ -1,1 +1,0 @@
-{:poly.web.user.interface/secret #or [#env SECRET "default-secret-please-change!"]}

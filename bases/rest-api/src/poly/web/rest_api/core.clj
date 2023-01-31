@@ -1,10 +1,11 @@
 (ns poly.web.rest-api.core
   (:require
-   [integrant.core :as ig]
+   [clojure.java.io :as io]
    [io.pedestal.http :as http]
    [io.pedestal.http.body-params :as body-params]
    [io.pedestal.http.route :as route]
    [poly.web.config.interface :as cfg]
+   [poly.web.logging.interface :as log]
    [poly.web.rest-api.api :as api]
    [poly.web.rest-api.middleware :as m]
    [poly.web.sql.interface :as sql]
@@ -56,12 +57,13 @@
                                         }})
 
 (defn- common-interceptors
-  [pool]
+  [pool env]
   [m/err-handler
    (body-params/body-params)
    m/coerce-body
    m/content-neg-intc
-   (m/db-interceptor pool)])
+   (m/db-interceptor pool)
+   (m/env-interceptor env)])
 
 (defn table-exists?
   [table-name]
@@ -71,12 +73,13 @@
                                 [:= :table_schema "public"]
                                 [:= :table_name table-name]]))]]))
 
-(defmethod ig/init-key ::service-map [_ {:keys [pool extras reloadable?]}]
+(defn service-map
+  [pool env extras reloadable?]
   (sql/query (table-exists? "users") {} pool) ; run to initialize DB connection
   (-> service
       (merge extras (when reloadable? {::http/routes #(route/expand-routes api/routes)}))
       http/default-interceptors
-      (update ::http/interceptors into (common-interceptors pool))))
+      (update ::http/interceptors into (common-interceptors pool env))))
 
 (defn start
   [service-map]
@@ -84,15 +87,15 @@
       http/create-server
       http/start))
 
-(defmethod ig/init-key ::server [_ {:keys [service-map]}]
-  (start service-map))
-
-(defmethod ig/halt-key! ::server [_ server]
+(defn stop
+  [server]
   (http/stop server))
 
 (defn -main
   "The entry-point for 'clojure -M:main'"
   [& args]
-  (let [component-cfgs ["sql/config.edn" "auth/config.edn" "rest-api/config.edn" "logging/config.edn"]]
-    (-> (cfg/parse-cfgs component-cfgs {:profile :default})
-        cfg/init)))
+  (when-let [m (sql/pending-migrations)]
+    (log/info (str "You have " (count m) " unapplied migrations.")))
+  (-> (io/resource "rest-api/config.edn")
+      (cfg/parse {:profile :default})
+      cfg/init))
