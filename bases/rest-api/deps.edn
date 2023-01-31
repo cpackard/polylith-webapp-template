@@ -1,8 +1,10 @@
-{:paths ["src" "resources"]
- :deps {;; HTTP and routing dependencies
-        io.pedestal/pedestal.service {:mvn/version "0.5.11-snapshot-1"}
-        io.pedestal/pedestal.jetty {:mvn/version "0.5.11-snapshot-1"}
-        ;; JSON parsing
-        org.clojure/data.json {:mvn/version "2.4.0"}}
+{:paths   ["src" "resources"]
+ :deps    {;; HTTP and routing dependencies
+           io.pedestal/pedestal.service {:mvn/version "0.5.11-snapshot-1"}
+           io.pedestal/pedestal.jetty   {:mvn/version "0.5.11-snapshot-1"}
+           ;; JSON parsing
+           org.clojure/data.json        {:mvn/version "2.4.0"}
+           ;;  Human-optimized error messages for clojure.spec
+           expound/expound              {:mvn/version "0.9.0"}}
  :aliases {:test {:extra-paths ["test"]
-                  :extra-deps {}}}}
+                  :extra-deps  {}}}}
