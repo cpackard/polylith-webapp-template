@@ -10,6 +10,12 @@ The end format will be similar to the [Clojure Polylith Realworld Example App](h
 
 To load all dependencies in the REPL, run the command `cider-jack-in-clj` from the [user.clj](development/src/user.clj) file.
 
+## Building and Running
+
+To build the project: `clojure -T:build uberjar :project backend`
+
+To run the compiled JAR file: `java -jar projects/backend/target/backend.jar`
+
 ## Polylith
 
 The Polylith documentation can be found here:
