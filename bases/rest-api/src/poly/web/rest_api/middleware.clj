@@ -52,7 +52,7 @@
    {:name ::database-interceptor
     :enter
     (fn [context]
-      (update context :request assoc :database pool))
+      (update context :request assoc :ds pool))
     :leave
     (fn [context]
       (if-let [queries (:tx-data context)]
@@ -77,10 +77,10 @@
     (fn [context]
       (let [auth             (get-in context [:request :headers "authorization"] "")
             token            (-> auth (string/split #" ") last)
-            {:keys [secret]} (get-in context [:request :env])]
+            {:keys [ds env]} (:request context)]
         (if (string/blank? token)
           context
-          (let [{:keys [errors] :as user} (user/user-by-token token secret)]
+          (let [{:keys [errors] :as user} (user/user-by-token token (:secret env) ds)]
             (if errors
               context
               (update context :request assoc :auth-user user))))))}))

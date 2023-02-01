@@ -3,6 +3,7 @@
    [clojure.spec.alpha :as s]
    [poly.web.auth.interface.spec :as auth-s]
    [poly.web.spec.interface :as spec]
+   [poly.web.sql.interface.spec :as sql-s]
    [poly.web.user.core :as core]
    [poly.web.user.interface.spec :as user-s]))
 
@@ -21,26 +22,29 @@
                                       :response ::visible-user)))
 
 (s/fdef user-by-token
-  :args (s/cat :token ::user-s/token :secret spec/non-empty-string?)
+  :args (s/cat :token ::user-s/token
+               :secret spec/non-empty-string?
+               :ds ::sql-s/connectable?)
   :ret ::visible-user
   :fn (fn [{:keys [args ret]}]
         (= (::user-s/token args) (::user-s/token ret))))
 
 (defn user-by-token
   "Retrieve the user associated with the given token."
-  [token secret]
-  (core/user-by-token token secret))
+  [token secret ds]
+  (core/user-by-token token secret ds))
 
 (s/fdef login
   :args (s/cat :email ::user-s/email
                :password ::user-s/password
-               :secret spec/non-empty-string?)
+               :secret spec/non-empty-string?
+               :ds ::sql-s/connectable?)
   :ret user-response)
 
 (defn login
   "Login as an existing user."
-  [email password secret]
-  (core/login email password secret))
+  [email password secret ds]
+  (core/login email password secret ds))
 
 (s/fdef register!
   :args (s/cat :user ::new-user :secret ::auth-s/secret?)
@@ -48,5 +52,5 @@
 
 (defn register!
   "Create a new user."
-  [new-user secret]
-  (core/register! new-user secret))
+  [new-user secret ds]
+  (core/register! new-user secret ds))

@@ -24,58 +24,47 @@
 
 (s/fdef query
   :args (s/cat :query map?
-               :opts (s/? map?)
-               :ds (s/? sql-s/connectable)))
+               :ds ::sql-s/connectable
+               :opts (s/? map?)))
 
 (defn query
   "Execute the given SQL query with optional arguments `opts`."
-  ([query]
-   (core/query query {} (core/ds)))
-  ([query opts]
-   (core/query query opts (core/ds)))
-  ([query opts ds]
-   (core/query query opts ds)))
+  [query ds & {:as opts}]
+  (core/query query ds opts))
 
 (s/fdef query-one
   :args (s/cat :query map?
-               :opts (s/? map?)
-               :ds (s/? sql-s/connectable))
+               :ds ::sql-s/connectable
+               :opts (s/? map?))
   :ret (complement sequential?))
 
 (defn query-one
   "Execute the given SQL query with optional arguments `opts`.
 
   Returns only the first result, if any."
-  ([query]
-   (core/query-one query {} (core/ds)))
-  ([query opts]
-   (core/query-one query opts (core/ds)))
-  ([query opts ds]
-   (core/query-one query opts ds)))
+  [query ds & {:as opts}]
+  (core/query-one query ds opts))
 
 (s/fdef insert!
-  :args (s/cat :table keyword?
-               :row map?
-               :opts map?
-               :ds (s/? ::sql-s/connectable))
+  :args (s/cat :row map?
+               :table keyword?
+               :ds ::sql-s/connectable
+               :opts (s/? map?))
   :ret (s/nilable map?))
 
 (defn insert!
-  ([table row]
-   (insert! table row {} (core/ds)))
-  ([table row opts]
-   (insert! table row opts (core/ds)))
-  ([table row opts ds]
-   (core/insert! table row opts ds)))
+  [row table ds & {:as opts}]
+  (core/insert! row table ds opts))
 
 (s/fdef transaction
-  :args (s/cat :ds ::sql-s/connectable
-               :queries (s/+ map?)))
+  :args (s/cat :queries (s/+ map?)
+               :ds ::sql-s/connectable
+               :opts (s/? map?)))
 
 (defn transaction
   "Execute each query sequentially in a transaction."
-  [ds queries]
-  (core/transaction ds queries))
+  [queries ds & {:as opts}]
+  (core/transaction queries ds opts))
 
 (s/def ::migration-file? spec/non-empty-string?)
 (s/def ::ns? spec/non-empty-string?)

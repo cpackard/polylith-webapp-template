@@ -11,15 +11,6 @@
    (com.zaxxer.hikari HikariDataSource)
    (java.sql ResultSet ResultSetMetaData)))
 
-(def ^:private db-pool
-  "Private reference to the DB connection pool."
-  (atom nil))
-
-(defn ds
-  "Helper function to access the DB connection pool"
-  []
-  @db-pool)
-
 (defn default-column-reader
   "Reads the raw response from SQL and optionally performs conversions."
   [^ResultSet rs ^ResultSetMetaData rsmeta ^Integer i]
@@ -35,36 +26,32 @@
 
 (defn init-pool
   [db-spec]
-  (if-let [pool @db-pool]
-    pool
-    (let [opts (merge jdbc/snake-kebab-opts
-                      {:builder-fn (rs/as-maps-adapter rs/as-modified-maps
-                                                       default-column-reader)})
-          new-pool (-> (connection/->pool HikariDataSource db-spec)
-                       (jdbc/with-options opts))]
-      (reset! db-pool new-pool))))
+  (let [opts     (merge jdbc/snake-kebab-opts
+                        {:builder-fn (rs/as-maps-adapter rs/as-modified-maps
+                                                         default-column-reader)})
+        new-pool (-> (connection/->pool HikariDataSource db-spec)
+                     (jdbc/with-options opts))]
+    new-pool))
 
 (defn close-pool
   "Close the database pool `datasource`."
   [pool]
-  (when (identical? pool @db-pool)
-    (reset! db-pool nil))
   (.close (:connectable pool)))
 
 (defn query
   "Run the given SQL query string and query params"
-  [sql-query opts ds]
+  [sql-query ds & {:as opts}]
   (jdbc-sql/query ds
                   (sql/format sql-query)
                   (merge {:timeout 2} opts)))
 
 (defn query-one
   "Same as the `query` function, but only returns the first matching row."
-  [sql-query opts ds]
-  (first (query sql-query opts ds)))
+  [sql-query ds & {:as opts}]
+  (first (query sql-query ds opts)))
 
 (defn insert!
-  [table row opts ds]
+  [row table ds & {:as opts}]
   (try
     (jdbc-sql/insert! ds table row opts)
     (catch Exception e
@@ -75,8 +62,8 @@
       {:errors {:sql [(.getMessage e)]}})))
 
 (defn transaction
-  [ds queries]
-  (jdbc/with-transaction [tx ds]
+  [queries ds & {:as opts}]
+  (jdbc/with-transaction [tx ds opts]
     (doseq [query queries]
       (jdbc/execute! tx (sql/format query)))))
 

@@ -24,8 +24,9 @@
                          (alter-column :id
                                        :set [:default [:nextval "users__id__seq"]]))
         type->seq    {:raw "ALTER SEQUENCE users__id__seq OWNED BY users.id;"}]
+    ;; TODO: update all these to txs
     (doseq [q [new-seq drop-default new-type default-val type->seq]]
-      (sql/query q {} ds))))
+      (sql/query q ds))))
 
 (s/fdef migrate-down
   :args (s/cat :config ::spec/migratus-config))
@@ -45,7 +46,7 @@
                                         [:gen_random_uuid]))
         drop-seq {:raw "DROP SEQUENCE users__id__seq CASCADE"}]
     (doseq [q [drop-default rollback-users reset-default drop-seq]]
-      (sql/query q {} ds))))
+      (sql/query q ds))))
 
 (comment
   (do
