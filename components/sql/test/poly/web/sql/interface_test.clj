@@ -50,8 +50,8 @@
   (let [ds (:db config)]
     (testing "can run the generated migrations"
       (sql/migrate! config)
-      (is (= true (:exists (sql/query-one (table-exists? "test_users") {} ds)))))
+      (is (= true (:exists (sql/query-one (table-exists? "test_users") ds)))))
 
     (testing "can rollback the migrations"
       (sql/rollback! config)
-      (is (= false (:exists (sql/query-one (table-exists? "test_users") {} ds)))))))
+      (is (= false (:exists (sql/query-one (table-exists? "test_users") ds)))))))

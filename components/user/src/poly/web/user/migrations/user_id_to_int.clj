@@ -23,7 +23,7 @@
                          (alter-column :id
                                        :set [:default [:nextval "users__id__seq"]]))
         type->seq    {:raw "ALTER SEQUENCE users__id__seq OWNED BY users.id;"}]
-    (sql/transaction ds [new-seq drop-default new-type default-val type->seq])))
+    (sql/transaction [new-seq drop-default new-type default-val type->seq] ds)))
 
 (s/fdef migrate-down
   :args (s/cat :config ::spec/migratus-config))
@@ -42,7 +42,7 @@
                                         :set :default
                                         [:gen_random_uuid]))
         drop-seq {:raw "DROP SEQUENCE users__id__seq CASCADE"}]
-    (sql/transaction ds [drop-default rollback-users reset-default drop-seq])))
+    (sql/transaction [drop-default rollback-users reset-default drop-seq] ds)))
 
 (comment
   (do

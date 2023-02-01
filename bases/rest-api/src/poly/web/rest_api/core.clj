@@ -75,7 +75,7 @@
 
 (defn service-map
   [pool env extras reloadable?]
-  (sql/query (table-exists? "users") {} pool) ; run to initialize DB connection
+  (sql/query (table-exists? "users") pool) ; run to initialize DB connection
   (-> service
       (merge extras (when reloadable? {::http/routes #(route/expand-routes api/routes)}))
       http/default-interceptors

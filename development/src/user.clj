@@ -138,4 +138,4 @@
   (print-route :user-register)
 
   ;; get detailed route info by verb and relative path
-  (recognize-route :post "/api/users"))
+  (recognize-route :post "/api/users/1/login"))

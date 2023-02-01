@@ -29,10 +29,10 @@
 
 (defn new-user!
   "Generate a new user and register with the DB for testing"
-  [& {:as new-user}]
+  [ds & {:as new-user}]
   (let [requ (-> (gen/generate (s/gen ::user/new-user))
                  (merge new-user))
-        newu (user/register! requ cfg/default-secret-value)]
+        newu (user/register! requ cfg/default-secret-value ds)]
     (if-let [errors (:errors newu)]
       (throw (ex-info "could not create new user" errors))
       (merge newu (select-keys requ [::user-s/password])))))

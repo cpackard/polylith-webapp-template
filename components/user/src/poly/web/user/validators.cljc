@@ -18,8 +18,8 @@
                 (expound/expound-str spec-kw user))))
 
 (defn has-email?
-  [{::user-s/keys [email]}]
-  (when-not (store/find-by-email email)
+  [{::user-s/keys [email]} ds]
+  (when-not (store/find-by-email email ds)
     (format-err :email "Invalid email.")))
 
 (defn password-match?
@@ -28,13 +28,13 @@
     (format-err :password "Invalid password.")))
 
 (defn existing-email?
-  [{::user-s/keys [email] :as user}]
-  (if (store/find-by-email email)
+  [{::user-s/keys [email] :as user} ds]
+  (if (store/find-by-email email ds)
     (format-err :email "A user exists with the given email.")
     user))
 
 (defn existing-username?
-  [{::user-s/keys [username] :as user}]
-  (if (store/find-by-username username)
+  [{::user-s/keys [username] :as user} ds]
+  (if (store/find-by-username username ds)
     (format-err :username "A user exists with the given username.")
     user))

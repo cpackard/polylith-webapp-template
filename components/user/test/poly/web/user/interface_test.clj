@@ -5,6 +5,7 @@
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as gen]
    [clojure.test :as test :refer [deftest is testing use-fixtures]]
+   [poly.web.auth.interface.spec :as auth-s]
    [poly.web.config.interface :as cfg]
    [poly.web.logging.interface.test-utils :as log-tu]
    [poly.web.spec.test-utils :as spec-tu]
@@ -26,8 +27,11 @@
     (sql-tu/reset-migrations! test-db-name)))
 
 (deftest register!
-  (let [register-tests (s/exercise-fn `user/register!)
-        results (map second register-tests)]
+  (let [users   (map first (s/exercise ::user/new-user))
+        secret  (-> ::auth-s/secret? s/gen gen/generate)
+        results (map (fn [user]
+                       (user/register! user secret (sql-tu/ds)))
+                     users)]
     (is (some #{{:errors {:email ["A user exists with the given email."]}}
                 {:errors {:username ["A user exists with the given username."]}}
                 {:errors {:other ["Cannot insert user into db."]}}}
@@ -43,29 +47,33 @@
 (deftest user-by-token
   (testing "invalid tokens do not return a user"
     (is (=  {:errors {:token ["Cannot find a user with associated token."]}}
-            (user/user-by-token (gen/generate (s/gen ::user-s/token)) cfg/default-secret-value))))
+            (user/user-by-token (gen/generate (s/gen ::user-s/token))
+                                cfg/default-secret-value
+                                (sql-tu/ds)))))
   (testing "valid tokens return their user"
     (let [email (spec-tu/gen-email)
-          user  (user-tu/new-user! ::user-s/email email)]
+          user  (user-tu/new-user! (sql-tu/ds) ::user-s/email email)]
       (is (= (dissoc user ::user-s/password)
-             (user/user-by-token (::user-s/token user) cfg/default-secret-value))))))
+             (user/user-by-token (::user-s/token user)
+                                 cfg/default-secret-value
+                                 (sql-tu/ds)))))))
 
 (deftest login
   (testing "unregistered user cannot login"
     (let [email    (gen/generate (s/gen ::user-s/email))
           password (gen/generate (s/gen ::user-s/password))]
       (is (= {:errors {:email ["Invalid email."]}}
-             (user/login email password cfg/default-secret-value)))))
+             (user/login email password cfg/default-secret-value (sql-tu/ds))))))
 
   (let [user     (gen/generate (s/gen ::user/new-user))
         email    (::user-s/email user)
         password (::user-s/password user)]
-    (user/register! user cfg/default-secret-value)
+    (user/register! user cfg/default-secret-value (sql-tu/ds))
     (testing "existing user cannot login with incorrect password"
       (is (= {:errors {:password ["Invalid password."]}}
-             (user/login email "bad-password" cfg/default-secret-value))))
+             (user/login email "bad-password" cfg/default-secret-value (sql-tu/ds)))))
     (testing "existing user can login with correct password"
-      (let [visible-user (user/login email password cfg/default-secret-value)]
+      (let [visible-user (user/login email password cfg/default-secret-value (sql-tu/ds))]
         (is (= email (::user-s/email visible-user))
             (format "Expected email %s from %s" email visible-user))
         (is (some? (::user-s/token visible-user))
