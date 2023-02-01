@@ -1,31 +1,10 @@
 (ns poly.web.sql.interface
   (:require
    [clojure.spec.alpha :as s]
-   [integrant.core :as ig]
    [poly.web.spec.interface :as spec]
    [poly.web.sql.core :as core]
    [poly.web.sql.interface.spec :as sql-s]
    [poly.web.sql.migrations :as migrations]))
-
-(defmethod ig/pre-init-spec ::db-spec
-  [_]
-  sql-s/db-spec)
-
-(defmethod ig/pre-init-spec ::db-pool
-  [_]
-  (s/keys :req-un [::sql-s/db-spec]))
-
-(defmethod ig/init-key ::db-spec
-  [_ db-spec]
-  db-spec)
-
-(defmethod ig/init-key ::db-pool
-  [_ {:keys [db-spec]}]
-  (core/init-pool db-spec))
-
-(defmethod ig/halt-key! ::db-pool
-  [_ pool]
-  (core/close-pool pool))
 
 (s/fdef init-pool
   :args (s/cat :db-spec ::sql-s/db-spec))
@@ -45,58 +24,47 @@
 
 (s/fdef query
   :args (s/cat :query map?
-               :opts (s/? map?)
-               :ds (s/? sql-s/connectable)))
+               :ds ::sql-s/connectable
+               :opts (s/? map?)))
 
 (defn query
   "Execute the given SQL query with optional arguments `opts`."
-  ([query]
-   (core/query query {} (core/ds)))
-  ([query opts]
-   (core/query query opts (core/ds)))
-  ([query opts ds]
-   (core/query query opts ds)))
+  [query ds & {:as opts}]
+  (core/query query ds opts))
 
 (s/fdef query-one
   :args (s/cat :query map?
-               :opts (s/? map?)
-               :ds (s/? sql-s/connectable))
+               :ds ::sql-s/connectable
+               :opts (s/? map?))
   :ret (complement sequential?))
 
 (defn query-one
   "Execute the given SQL query with optional arguments `opts`.
 
   Returns only the first result, if any."
-  ([query]
-   (core/query-one query {} (core/ds)))
-  ([query opts]
-   (core/query-one query opts (core/ds)))
-  ([query opts ds]
-   (core/query-one query opts ds)))
+  [query ds & {:as opts}]
+  (core/query-one query ds opts))
 
 (s/fdef insert!
-  :args (s/cat :table keyword?
-               :row map?
-               :opts map?
-               :ds (s/? ::sql-s/connectable))
+  :args (s/cat :row map?
+               :table keyword?
+               :ds ::sql-s/connectable
+               :opts (s/? map?))
   :ret (s/nilable map?))
 
 (defn insert!
-  ([table row]
-   (insert! table row {} (core/ds)))
-  ([table row opts]
-   (insert! table row opts (core/ds)))
-  ([table row opts ds]
-   (core/insert! table row opts ds)))
+  [row table ds & {:as opts}]
+  (core/insert! row table ds opts))
 
 (s/fdef transaction
-  :args (s/cat :ds ::sql-s/connectable
-               :queries (s/+ map?)))
+  :args (s/cat :queries (s/+ map?)
+               :ds ::sql-s/connectable
+               :opts (s/? map?)))
 
 (defn transaction
   "Execute each query sequentially in a transaction."
-  [ds queries]
-  (core/transaction ds queries))
+  [queries ds & {:as opts}]
+  (core/transaction queries ds opts))
 
 (s/def ::migration-file? spec/non-empty-string?)
 (s/def ::ns? spec/non-empty-string?)

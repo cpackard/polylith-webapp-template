@@ -34,30 +34,32 @@
       (dissoc ::user-s/password)))
 
 (defn login
-  [email password]
-  (let [user        (store/find-by-email email)
-        validations (some-fn validators/has-email?
+  [email password secret ds]
+  (let [user        (store/find-by-email email ds)
+        validations (some-fn #(validators/has-email? % ds)
                              (partial validators/password-match? password)
-                             #(->> (::user-s/username %)
-                                   (auth/generate-token email)
-                                   (user->visible-user user)))]
+                             #(-> (::user-s/username %)
+                                  (as-> username (auth/generate-token email username secret))
+                                  (as-> token (user->visible-user user token))))]
     (validations user)))
 
 (defn user-by-token
-  [token]
-  (if-let [user (-> (auth/token->claims token)
+  [token secret ds]
+  (if-let [user (-> (auth/token->claims token secret)
                     :sub
-                    store/find-by-username)]
+                    (store/find-by-username ds))]
     (user->visible-user user token)
     {:errors {:token ["Cannot find a user with associated token."]}}))
 
-(defn process
+(defn some-error
   "Takes an input `data` and any number of single-argument functions.
 
   Calls each function with the result of the previous function
   (or `data` for the first function).
   Returns if the last function's result contains the `:errors` key,
-  otherwise continues."
+  otherwise continues.
+
+  Status: experimental."
   [data & functions]
   (loop [d         data
          [f & fns] functions]
@@ -67,13 +69,27 @@
         (recur res fns)))))
 
 (defn register!
-  [{::user-s/keys [username email password] :as req-user}]
+  [{::user-s/keys [username email password] :as req-user} secret ds]
   (let [new-user    (assoc req-user
                            ::user-s/password
                            (auth/encrypt-password password))
-        new-token (auth/generate-token email username)]
-    (process new-user
-             validators/existing-email?
-             validators/existing-username?
-             store/insert-user!
-             #(user->visible-user % new-token))))
+        new-token (auth/generate-token email username secret)]
+    (some-error new-user
+                #(validators/existing-email? % ds)
+                #(validators/existing-username? % ds)
+                #(store/insert-user! % ds)
+                #(user->visible-user % new-token))))
+
+(comment
+  ;; TODO: propagate nil
+  (defn register!
+    [{::user-s/keys [username email password] :as req-user} secret ds]
+    (let [new-user    (assoc req-user
+                             ::user-s/password
+                             (auth/encrypt-password password))
+          new-token (auth/generate-token email username secret)]
+      (some-error new-user
+                  #(validators/existing-email? % ds)
+                  #(validators/existing-username? % ds)
+                  #(store/insert-user! % ds)
+                  #(user->visible-user % new-token)))))

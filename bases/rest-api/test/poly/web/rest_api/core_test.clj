@@ -1,6 +1,7 @@
 (ns poly.web.rest-api.core_test
   (:require
    [clojure.data.json :as json]
+   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as gen]
    [clojure.string :as string]
@@ -9,8 +10,8 @@
    [io.pedestal.test :refer [response-for]]
    [poly.web.config.interface :as cfg]
    [poly.web.logging.interface.test-utils :as log-tu]
-   [poly.web.rest-api.core :as api-core]
-   [poly.web.spec.interface.test-utils :as spec-tu]
+   [poly.web.rest-api.interface :as rest-api]
+   [poly.web.spec.test-utils :as spec-tu]
    [poly.web.sql.interface :as sql]
    [poly.web.sql.interface.test-utils :as sql-tu]
    [poly.web.test-utils.interface :as test-utils]
@@ -26,12 +27,12 @@
   "Create HTTP service function for testing"
   [db-name]
   (fn [f]
-    (let [sys (-> ["sql/config.edn" "auth/config.edn" "rest-api/config.edn" "logging/config.edn"]
+    (let [sys (-> [(io/resource "rest-api/config.edn")]
                   (cfg/parse-cfgs {:profile :test})
-                  (dissoc ::api-core/server)
+                  (dissoc ::rest-api/server)
                   (assoc-in [::sql/db-spec :dbname] db-name)
                   cfg/init)
-          service-fn (-> sys ::api-core/service-map http/create-servlet ::http/service-fn)]
+          service-fn (-> sys ::rest-api/service-map http/create-servlet ::http/service-fn)]
       (reset! service service-fn)
 
       (f)
@@ -87,12 +88,13 @@
           (is (= 422 status))))))
   (testing "/api/users/:user-id/login"
     (let [email (spec-tu/gen-email)
-          user  (user-tu/new-user! ::user-s/email email)]
+          user  (user-tu/new-user! (sql-tu/ds) ::user-s/email email)]
       (testing "can login with a registered user"
         (let [{:keys [status body]}
               (res-for :post (str "/api/users/" (::user-s/id user) "/login")
                        :body {:user user})]
-          (is (= 200 status))
+          (is (= 200 status)
+              (str "/api/users/" (::user-s/id user) "/login"))
           (is (some? (-> body json/read-str (get "token")))))))))
 
 (deftest user-info
@@ -103,7 +105,7 @@
              (json/read-str body)))))
   (testing "receives a Forbidden error with insufficient permissions"
     (let [email                      (spec-tu/gen-email)
-          {::user-s/keys [token id]} (user-tu/new-user! ::user-s/email email)
+          {::user-s/keys [token id]} (user-tu/new-user! (sql-tu/ds) ::user-s/email email)
           {:keys [status body]}      (res-for :get (str "/api/users/" (inc id))
                                               :token token)]
       (is (= 403 status))
@@ -114,7 +116,7 @@
           (spec-tu/gen-email)
 
           {::user-s/keys [token id name email username]}
-          (user-tu/new-user! ::user-s/email email)
+          (user-tu/new-user! (sql-tu/ds) ::user-s/email email)
 
           {:keys [status body]}
           (res-for :get (str "/api/users/" id) :token token)]

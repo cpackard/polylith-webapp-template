@@ -3,7 +3,7 @@
    [clojure.java.io :as io]
    [clojure.string :as string]
    [migratus.core :as migratus]
-   [poly.web.sql.migratus :as sql-m]))
+   [poly.web.config.interface :as cfg]))
 
 (def ^:private migration-template
   "
@@ -24,7 +24,7 @@
         table (-> (create-table :test_users :if-not-exists)
                   (with-columns [[:id :uuid [:not nil] [:primary-key]]
                                  [:name [:varchar 255] [:constraint :users--name] :unique]]))]
-    (sql/query table {} ds)))
+    (sql/query table ds)))
 
 (s/fdef migrate-down
   :args (s/cat :config ::spec/migratus-config))
@@ -32,7 +32,7 @@
 (defn migrate-down
   [config]
   (let [ds (:db config)]
-    (sql/query (drop-table :test_users) {} ds)))
+    (sql/query (drop-table :test_users) ds)))
 
 (comment
   (do
@@ -47,6 +47,13 @@
  :down-fn migrate-down
  :transaction? %s}
 ")
+
+(def config
+  {:store                :database
+   :migration-dir        "components/sql/resources/sql/migrations/"
+   :migration-table-name "app_migrations"
+   :db                   (-> (cfg/parse (io/resource "rest-api/config.edn"))
+                             :poly.web.sql.interface/db-spec)})
 
 (defn- project-file-path
   "Get the relative path from the project root -> migration namespace's file."
@@ -65,14 +72,14 @@
 (defn migration-files
   "Return a seq of all migration files."
   [& {:as config}]
-  (->> (io/file (:migration-dir (merge sql-m/config config)))
+  (->> (io/file (:migration-dir (merge config config)))
        (file-seq)
        (filter (fn [f] (string/ends-with? (str f) ".edn")))))
 
 (defn create-migration!
   "Create a new migration file at the given namespace."
   [name parent-ns tx? ds-opts]
-  (-> (merge sql-m/config ds-opts)
+  (-> (merge config ds-opts)
       (migratus/create name :edn))
   (let [file (->> (migration-files ds-opts)
                   (filter #(string/includes? % name))
@@ -86,19 +93,19 @@
 
 (defn migrate!
   [opts]
-  (migratus/migrate (merge sql-m/config opts)))
+  (migratus/migrate (merge config opts)))
 
 (defn rollback!
   [migration-id opts]
-  (let [config (merge sql-m/config opts)]
+  (let [config (merge config opts)]
     (if migration-id
       (migratus/rollback-until-just-after config migration-id)
       (migratus/rollback config))))
 
 (defn reset-migrations!
   [opts]
-  (migratus/reset (merge sql-m/config opts)))
+  (migratus/reset (merge config opts)))
 
 (defn pending-migrations
   [opts]
-  (migratus/pending-list (merge sql-m/config opts)))
+  (migratus/pending-list (merge config opts)))

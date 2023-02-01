@@ -52,12 +52,21 @@
    {:name ::database-interceptor
     :enter
     (fn [context]
-      (update context :request assoc :database pool))
+      (update context :request assoc :ds pool))
     :leave
     (fn [context]
       (if-let [queries (:tx-data context)]
         (sql/transaction pool queries)
         context))}))
+
+(defn env-interceptor
+  "Attaches all environment info to the request."
+  [env]
+  (interceptor
+   {:name ::env-interceptor
+    :enter
+    (fn [context]
+      (update context :request assoc :env env))}))
 
 (def wrap-auth-user
   "Interceptor for adding the calling users' info
@@ -66,11 +75,12 @@
    {:name ::wrap-auth-user
     :enter
     (fn [context]
-      (let [auth (get-in context [:request :headers "authorization"] "")
-            token (-> auth (string/split #" ") last)]
+      (let [auth             (get-in context [:request :headers "authorization"] "")
+            token            (-> auth (string/split #" ") last)
+            {:keys [ds env]} (:request context)]
         (if (string/blank? token)
           context
-          (let [{:keys [errors] :as user} (user/user-by-token token)]
+          (let [{:keys [errors] :as user} (user/user-by-token token (:secret env) ds)]
             (if errors
               context
               (update context :request assoc :auth-user user))))))}))

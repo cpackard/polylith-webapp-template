@@ -60,8 +60,9 @@
    (fn [context]
      (let [new-user (-> (get-in context [:request :json-params :user])
                         (qualify-kws (namespace ::user-s/id)))
+           {:keys [ds env]} (:request context)
            response (if (s/valid? ::user/new-user new-user)
-                      (->> new-user user/register!)
+                      (user/register! new-user (:secret env) ds)
                       (explain-bad-req ::user/new-user new-user))]
        (assoc context :response (response-code response))))})
 
@@ -70,9 +71,9 @@
   {:name :user-login
    :enter
    (fn [context]
-     (let [{:keys [email password]} (get-in context
-                                            [:request :json-params :user])]
-       (->> (user/login email password)
+     (let [{:keys [ds env json-params]} (:request context)
+           {:keys [email password]} (:user json-params)]
+       (->> (user/login email password (:secret env) ds)
             response-code
             (assoc context :response))))})
 
@@ -81,11 +82,14 @@
   {:name :user-info
    :enter
    (fn [context]
-     (let [{::user-s/keys [token id]} (get-in context [:request :auth-user])
-           req-id                     (get-in context [:request :path-params :user-id])]
-       (->> (if-not (= id (Integer/parseInt req-id))
+     (let [{:keys [ds env path-params auth-user]} (:request context)
+
+           {::user-s/keys [token id]} auth-user
+
+           req-id (-> path-params :user-id Integer/parseInt)]
+       (->> (if-not (= id req-id)
               {:errors {:auth ["Permission denied."]}}
-              (user/user-by-token token))
+              (user/user-by-token token (:secret env) ds))
             response-code
             (assoc context :response))))})
 

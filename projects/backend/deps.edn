@@ -11,6 +11,9 @@
         poly/rest-api                {:local/root "../../bases/rest-api"}}
 
  :aliases {:test {:extra-paths []
-                  :extra-deps  {poly/test-utils {:local/root "../../components/test-utils"}}}
+                  :extra-deps  {;; Dependency for Spec generators
+                                org.clojure/test.check {:mvn/version "0.9.0"}
+                                ;; Components
+                                poly/test-utils {:local/root "../../components/test-utils"}}}
 
            :uberjar {:main poly.web.rest-api.core}}}

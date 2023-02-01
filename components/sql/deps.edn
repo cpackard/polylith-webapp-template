@@ -9,10 +9,6 @@
            ;; Database migration framework
            migratus/migratus                 {:mvn/version "1.4.6"}
            ;; PostgreSQL drivers
-           org.postgresql/postgresql         {:mvn/version "42.3.7"}
-           ;; Micro-framework for managing components with runtime state.
-           integrant/integrant               {:mvn/version "0.8.0"}
-           ;; Data-driven schemas
-           metosin/malli                     {:mvn/version "0.9.2"}}
+           org.postgresql/postgresql         {:mvn/version "42.3.7"}}
  :aliases {:test {:extra-paths ["test"]
                   :extra-deps  {}}}}

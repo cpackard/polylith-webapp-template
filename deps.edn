@@ -19,6 +19,8 @@
                                "bases/rest-api/src"
                                "bases/rest-api/resources"]
                  :extra-deps {org.clojure/clojure {:mvn/version "1.11.1"}
+                              ;; requirement for `clojure.spec.gen.alpha`
+                              org.clojure/test.check {:mvn/version "0.9.0"}
                               ;; Convenience functions for REPL development with Integrant
                               integrant/repl      {:mvn/version "0.3.2"}
                               ;;  Human-optimized error messages for clojure.spec
@@ -46,20 +48,6 @@
                                 "components/auth/test"
                                 "components/spec/test"]
                   :extra-deps  {}}
-
-           :migrate {:extra-paths ["components/sql/src"
-                                   "components/sql/resources"
-                                   "components/logging/src"
-                                   "components/logging/resources"
-                                   "components/config/src"
-                                   "components/config/resources"]
-                     :extra-deps  {com.github.paulbutcher/clj-migratus {:git/tag "v1.0.3"
-                                                                        :git/sha "46a3ac1"}
-                                   poly/sql                            {:local/root "components/sql"}
-                                   poly/logging                        {:local/root "components/logging"}
-                                   poly/config                         {:local/root "components/config"}}
-                     :jvm-opts    ["-Dmigratus.config.path=poly/web/sql/migratus.clj"]
-                     :main-opts   ["-m" "clj-migratus"]}
 
            :build {:deps       {io.github.seancorfield/build-clj {:git/tag "v0.9.2"
                                                                   :git/sha "9c9f078"}}

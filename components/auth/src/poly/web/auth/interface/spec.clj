@@ -1,6 +1,7 @@
 (ns poly.web.auth.interface.spec
   (:require
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s]
+   [poly.web.spec.interface :as spec]))
 
 (def ^:private base-64-re "[a-zA-Z0-9/+-_]+=*")
 (def ^:private jwt-re (re-pattern (apply format "%s\\.%s\\.%s" (repeat 3 base-64-re))))
@@ -24,3 +25,5 @@
 (s/def ::jwt jwt)
 
 (s/def ::jwt-str? jwt-str?)
+
+(s/def ::secret? spec/str-min-len-20?)

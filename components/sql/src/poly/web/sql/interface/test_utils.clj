@@ -5,23 +5,31 @@
    [clojure.string :as string]
    [poly.web.config.interface :as cfg]
    [poly.web.sql.interface :as sql]
-   [poly.web.sql.migrations :as migrations]
-   [poly.web.sql.migratus :as sql-m]))
+   [poly.web.sql.migrations :as migrations]))
 
 (defn- create-sys-cfg
   "Merge all configs needed for creating the test DB."
   [& {:keys [configs]
-      :or {configs ["sql/config.edn" "auth/config.edn"]}}]
-  (cfg/parse-cfgs configs {:profile :test}))
+      :or {configs (io/resource "rest-api/config.edn")}}]
+  (-> configs
+      (cfg/parse {:profile :test})
+      (select-keys [::sql/db-pool ::sql/db-spec])))
 
 (defn- start-db-pool!
   "Initialize DB connection for tests."
   [db-name sys-cfg]
-  (let [sys (-> sys-cfg
-                (assoc-in [::sql/db-spec :dbname] db-name)
-                cfg/init)
-        migratus-cfg (assoc-in sql-m/config [:db :dbname] db-name)]
-    [sys migratus-cfg]))
+  (-> sys-cfg
+      (assoc-in [::sql/db-spec :dbname] db-name)
+      cfg/init))
+
+(defn migration-cfg
+  [db-name]
+  (assoc-in migrations/config [:db :dbname] db-name))
+
+(defonce ^:private test-ds
+  (atom nil))
+
+(defn ds [] @test-ds)
 
 (s/def ::db-name string?)
 (s/def ::opts map?)
@@ -29,20 +37,27 @@
   :args (s/keys :opt-un [::opts ::db-name]))
 
 (defn with-db!
-  "Setup/teardown a test DB."
+  "Setup/teardown a test DB.
+
+  Also resets the underlying connection pool for the `ds` function."
   [db-name & {:keys [opts]
-              :or {opts {}}}]
+              :or   {opts {}}}]
   (fn [f]
-    (let [sys-cfg (create-sys-cfg)
-          ds (::sql/db-spec sys-cfg)
+    (let [sys-cfg   (create-sys-cfg)
+          ds        (::sql/db-spec sys-cfg)
           create-db {:raw (str "CREATE DATABASE " db-name)}
           drop-db   {:raw (str "DROP DATABASE IF EXISTS " db-name " WITH (FORCE)")}]
-      (sql/query drop-db opts ds)
-      (sql/query create-db opts ds)
+      (sql/query drop-db ds opts)
+      (sql/query create-db ds opts)
 
-      (f)
-
-      (sql/query drop-db opts ds))))
+      (let [sys (start-db-pool! db-name sys-cfg)]
+        (reset! test-ds (::sql/db-pool sys))
+        (try
+          (f)
+          (finally
+            (reset! test-ds nil)
+            (sql/query drop-db ds opts)
+            (cfg/halt! sys)))))))
 
 (s/fdef reset-migrations!
   :args (s/cat :db-name string?))
@@ -51,28 +66,24 @@
   "Reset DB migrations between test runs."
   [db-name]
   (fn [f]
-    (let [[sys migration-cfg] (start-db-pool! db-name (create-sys-cfg))]
-      (migrations/reset-migrations! migration-cfg)
-
-      (f)
-
-      (cfg/halt! sys))))
+    (migrations/reset-migrations! (migration-cfg db-name))
+    (f)))
 
 (defn migration-cleanup!
   "Delete the SQL migration table
   and all `.edn` files in the migration directory."
   ([]
-   (migration-cleanup! sql-m/config))
+   (migration-cleanup! migrations/config))
   ([config]
    (let [migration-table (keyword (:migration-table-name config))
          ds              (:db config)
-         drop-table      #(sql/query {:drop-table [:if-exists migration-table]} {} ds)
+         drop-table      #(sql/query {:drop-table [:if-exists migration-table]} ds)
          delete-fs       #(doseq [file (migrations/migration-files config)]
                             (when (string/ends-with? file ".edn")
                               (io/delete-file file true)))]
      (fn [f]
-       (doseq [f0 [drop-table delete-fs]] (f0))
+       (doseq [g [drop-table delete-fs]] (g))
 
        (f)
 
-       (doseq [f2 [drop-table delete-fs]] (f2))))))
+       (doseq [g [drop-table delete-fs]] (g))))))

@@ -7,7 +7,7 @@
    [poly.web.sql.interface :as sql]
    [poly.web.sql.interface.helpers :refer [from select where]]
    [poly.web.sql.interface.test-utils :as sql-tu]
-   [poly.web.sql.migratus :as sql-m]
+   [poly.web.sql.migrations :as migrations]
    [poly.web.test-utils.interface :as tu]))
 
 (def ^:private test-db-name "poly_web_sql_interface_test")
@@ -17,7 +17,7 @@
   (let [table-name "test_app_migrations"
         directory (re-find #"components.*"
                            (str (io/resource "sql/test-migrations/")))]
-    (-> sql-m/config
+    (-> migrations/config
         (merge {:migration-table-name table-name :migration-dir directory})
         (assoc-in [:db :dbname] test-db-name))))
 
@@ -50,8 +50,8 @@
   (let [ds (:db config)]
     (testing "can run the generated migrations"
       (sql/migrate! config)
-      (is (= true (:exists (sql/query-one (table-exists? "test_users") {} ds)))))
+      (is (= true (:exists (sql/query-one (table-exists? "test_users") ds)))))
 
     (testing "can rollback the migrations"
       (sql/rollback! config)
-      (is (= false (:exists (sql/query-one (table-exists? "test_users") {} ds)))))))
+      (is (= false (:exists (sql/query-one (table-exists? "test_users") ds)))))))

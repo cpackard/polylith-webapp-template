@@ -9,5 +9,7 @@
 
 (def password? core/password?)
 
+(def str-min-len-20? core/str-min-len-20?)
+
 (s/def ::errors map?)
 (def errors (s/keys :req-un [::errors]))
