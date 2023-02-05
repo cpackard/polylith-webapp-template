@@ -5,7 +5,7 @@
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as gen]
    [clojure.string :as string]
-   [clojure.test :refer [deftest is testing use-fixtures]]
+   [clojure.test :refer [deftest is use-fixtures]]
    [io.pedestal.http :as http]
    [io.pedestal.test :refer [response-for]]
    [poly.web.config.interface :as cfg]
@@ -73,55 +73,64 @@
                   :always (concat [:headers headers]))]
     (apply response-for @service args)))
 
-;; TODO: I don't like the look of these nested tests 🤔
-(deftest user
-  (testing "/api/users"
-    (let [user (gen/generate (s/gen ::user/new-user))]
-      (testing "can register a user successfully"
-        (let [{:keys [status]}
-              (res-for :post "/api/users" :body {:user user})]
-          (is (= 200 status))))
-      (testing "handles bad request (missing email)"
-        (let [{:keys [status body]}
-              (res-for :post "/api/users" :body {:user (dissoc user ::user-s/email)})]
-          (is (string/includes? body "should contain key: :poly.web.user.interface.spec\\/email"))
-          (is (= 422 status)))))))
+(deftest user-register--bad-request
+  (let [user (gen/generate (s/gen ::user/new-user))
+        req  {:user (dissoc user ::user-s/email)}
 
-(deftest user-login--can--login--with--registered--user
-  (testing "/api/users/:user-id/login"
-    (let [email (spec-tu/gen-email)
-          user  (user-tu/new-user! (sql-tu/ds) ::user-s/email email)]
-      (testing "can login with a registered user"
-        (let [{:keys [status body]}
-              (res-for :post (str "/api/users/" (::user-s/id user) "/login")
-                       :body {:user user})]
-          (is (= 200 status)
-              (str "/api/users/" (::user-s/id user) "/login"))
-          (is (some? (-> body json/read-str (get "token")))))))))
+        {:keys [status body]} (res-for :post "/api/users" :body req)]
+    (is (string/includes? body "should contain key: :poly.web.user.interface.spec\\/email"))
+    (is (= 422 status))))
 
-(deftest user-info
-  (testing "receives an Unauthorized error without authentication"
-    (let [{:keys [status body]} (res-for :get "/api/users/1")]
-      (is (= 401 status))
-      (is (= {"errors" {"auth" ["Authorization required."]}}
-             (json/read-str body)))))
-  (testing "receives a Forbidden error with insufficient permissions"
-    (let [email                      (spec-tu/gen-email)
-          {::user-s/keys [token id]} (user-tu/new-user! (sql-tu/ds) ::user-s/email email)
-          {:keys [status body]}      (res-for :get (str "/api/users/" (inc id))
-                                              :token token)]
-      (is (= 403 status))
-      (is (= {"errors" {"auth" ["Permission denied."]}}
-             (json/read-str body)))))
-  (testing "can successfully read user info"
-    (let [email
-          (spec-tu/gen-email)
+(deftest user-register--success
+  (let [user (gen/generate (s/gen ::user/new-user))
 
-          {::user-s/keys [token id name email username]}
-          (user-tu/new-user! (sql-tu/ds) ::user-s/email email)
+        {:keys [status]} (res-for :post "/api/users" :body {:user user})]
+    (is (= 200 status))))
 
-          {:keys [status body]}
-          (res-for :get (str "/api/users/" id) :token token)]
-      (is (= 200 status))
-      (is (= {:id id :name name :email email :username username :token token}
-             (json/read-str body :key-fn keyword))))))
+(comment
+  (deftest user-register--all
+    (user-register--bad-request)
+    (user-register--success)))
+
+(deftest user-login--success
+  (let [email (spec-tu/gen-email)
+        user  (user-tu/new-user! (sql-tu/ds) ::user-s/email email)
+        path  (str "/api/users/" (::user-s/id user) "/login")
+
+        {:keys [status body]} (res-for :post path :body {:user user})]
+    (is (= 200 status))
+    (is (some? (-> body json/read-str (get "token"))))))
+
+(deftest user-info--unauthorized
+  (let [{:keys [status body]} (res-for :get "/api/users/1")]
+    (is (= 401 status))
+    (is (= {"errors" {"auth" ["Authorization required."]}}
+           (json/read-str body)))))
+
+(deftest user-info--forbidden
+  (let [email                      (spec-tu/gen-email)
+        {::user-s/keys [token id]} (user-tu/new-user! (sql-tu/ds) ::user-s/email email)
+        {:keys [status body]}      (res-for :get (str "/api/users/" (inc id))
+                                            :token token)]
+    (is (= 403 status))
+    (is (= {"errors" {"auth" ["Permission denied."]}}
+           (json/read-str body)))))
+
+(deftest user-info--success
+  (let [email
+        (spec-tu/gen-email)
+
+        {::user-s/keys [token id name email username]}
+        (user-tu/new-user! (sql-tu/ds) ::user-s/email email)
+
+        {:keys [status body]}
+        (res-for :get (str "/api/users/" id) :token token)]
+    (is (= 200 status))
+    (is (= {:id id :name name :email email :username username :token token}
+           (json/read-str body :key-fn keyword)))))
+
+(comment
+  (deftest user-info--all
+    (user-info--unauthorized)
+    (user-info--forbidden)
+    (user-info--success)))
