@@ -85,7 +85,9 @@
         (let [{:keys [status body]}
               (res-for :post "/api/users" :body {:user (dissoc user ::user-s/email)})]
           (is (string/includes? body "should contain key: :poly.web.user.interface.spec\\/email"))
-          (is (= 422 status))))))
+          (is (= 422 status)))))))
+
+(deftest user-login--can--login--with--registered--user
   (testing "/api/users/:user-id/login"
     (let [email (spec-tu/gen-email)
           user  (user-tu/new-user! (sql-tu/ds) ::user-s/email email)]

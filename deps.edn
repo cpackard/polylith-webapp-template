@@ -1,20 +1,22 @@
 {:aliases {:dev {:extra-paths ["development/src"
                                ;; Components
-                               "components/sql/src"
-                               "components/sql/resources"
-                               "components/logging/src"
-                               "components/logging/resources"
-                               "components/config/src"
-                               "components/config/resources"
-                               "components/user/src"
-                               "components/user/resources"
-                               "components/auth/src"
-                               "components/auth/resources"
-                               "components/spec/src"
-                               "components/spec/resources"
-                               "components/test-utils/src"
-                               "components/test-utils/resources"
 
+                               "components/auth/resources"
+                               "components/auth/src"
+                               "components/config/resources"
+                               "components/config/src"
+                               "components/logging/resources"
+                               "components/logging/src"
+                               "components/macros/resources"
+                               "components/macros/src"
+                               "components/spec/resources"
+                               "components/spec/src"
+                               "components/sql/resources"
+                               "components/sql/src"
+                               "components/test-utils/resources"
+                               "components/test-utils/src"
+                               "components/user/resources"
+                               "components/user/src"
                                ;; Bases
                                "bases/rest-api/src"
                                "bases/rest-api/resources"]
@@ -27,26 +29,27 @@
                               expound/expound     {:mvn/version "0.9.0"}
 
                               ;; Components
-                              poly/sql        {:local/root "components/sql"}
-                              poly/logging    {:local/root "components/logging"}
-                              poly/test-utils {:local/root "components/test-utils"}
-                              poly/config     {:local/root "components/config"}
-                              poly/user       {:local/root "components/user"}
                               poly/auth       {:local/root "components/auth"}
+                              poly/config     {:local/root "components/config"}
+                              poly/logging    {:local/root "components/logging"}
+                              poly/macros     {:local/root "components/macros"}
                               poly/spec       {:local/root "components/spec"}
-
+                              poly/sql        {:local/root "components/sql"}
+                              poly/test-utils {:local/root "components/test-utils"}
+                              poly/user       {:local/root "components/user"}
                               ;; Bases
                               poly/rest-api {:local/root "bases/rest-api"}
 
                               ;; Formatting
                               cljfmt/cljfmt {:mvn/version "0.9.0"}}}
 
-           :test {:extra-paths ["components/sql/test"
-                                "components/logging/test"
+           :test {:extra-paths ["components/auth/test"
                                 "components/config/test"
-                                "components/user/test"
-                                "components/auth/test"
-                                "components/spec/test"]
+                                "components/logging/test"
+                                "components/macros/test"
+                                "components/spec/test"
+                                "components/sql/test"
+                                "components/user/test"]
                   :extra-deps  {}}
 
            :build {:deps       {io.github.seancorfield/build-clj {:git/tag "v0.9.2"

@@ -3,6 +3,7 @@
    [clojure.spec.alpha :as s]
    [poly.web.auth.interface :as auth]
    [poly.web.auth.interface.spec :as auth-s]
+   [poly.web.macros.interface :as macros]
    [poly.web.user.interface.spec :as user-s]
    [poly.web.user.store :as store]
    [poly.web.user.validators :as validators]))
@@ -35,13 +36,12 @@
 
 (defn login
   [email password secret ds]
-  (let [user        (store/find-by-email email ds)
-        validations (some-fn #(validators/has-email? % ds)
-                             (partial validators/password-match? password)
-                             #(-> (::user-s/username %)
-                                  (as-> username (auth/generate-token email username secret))
-                                  (as-> token (user->visible-user user token))))]
-    (validations user)))
+  (if-let [{::user-s/keys [email username] :as user} (store/find-by-email email ds)]
+    (macros/some-fn-> :errors
+                      user
+                      (validators/password-match? password)
+                      (user->visible-user (auth/generate-token email username secret)))
+    {:errors {:email ["Invalid email."]}}))
 
 (defn user-by-token
   [token secret ds]
@@ -51,45 +51,15 @@
     (user->visible-user user token)
     {:errors {:token ["Cannot find a user with associated token."]}}))
 
-(defn some-error
-  "Takes an input `data` and any number of single-argument functions.
-
-  Calls each function with the result of the previous function
-  (or `data` for the first function).
-  Returns if the last function's result contains the `:errors` key,
-  otherwise continues.
-
-  Status: experimental."
-  [data & functions]
-  (loop [d         data
-         [f & fns] functions]
-    (let [{:keys [errors] :as res} (f d)]
-      (if (or errors (empty? fns))
-        res
-        (recur res fns)))))
-
 (defn register!
-  [{::user-s/keys [username email password] :as req-user} secret ds]
+  [{::user-s/keys [email username password] :as req-user} secret ds]
   (let [new-user    (assoc req-user
                            ::user-s/password
                            (auth/encrypt-password password))
         new-token (auth/generate-token email username secret)]
-    (some-error new-user
-                #(validators/existing-email? % ds)
-                #(validators/existing-username? % ds)
-                #(store/insert-user! % ds)
-                #(user->visible-user % new-token))))
-
-(comment
-  ;; TODO: propagate nil
-  (defn register!
-    [{::user-s/keys [username email password] :as req-user} secret ds]
-    (let [new-user    (assoc req-user
-                             ::user-s/password
-                             (auth/encrypt-password password))
-          new-token (auth/generate-token email username secret)]
-      (some-error new-user
-                  #(validators/existing-email? % ds)
-                  #(validators/existing-username? % ds)
-                  #(store/insert-user! % ds)
-                  #(user->visible-user % new-token)))))
+    (macros/some-fn-> :errors
+                      new-user
+                      (validators/existing-email? ds)
+                      (validators/existing-username? ds)
+                      (store/insert-user! ds)
+                      (user->visible-user new-token))))

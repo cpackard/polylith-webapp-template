@@ -26,6 +26,9 @@
     [interface :as log]]
    [poly.web.logging.interface
     [test-utils :as log-tu]]
+   [poly.web.macros
+    [core :as macros-core]
+    [interface :as macros]]
    [poly.web.rest-api
     [handler :as handler]
     [api :as api]
