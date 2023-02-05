@@ -9,15 +9,14 @@
    [io.pedestal.http :as http]
    [io.pedestal.test :refer [response-for]]
    [poly.web.config.interface :as cfg]
-   [poly.web.logging.interface.test-utils :as log-tu]
+   [poly.web.logging.test-utils :as log-tu]
    [poly.web.rest-api.interface :as rest-api]
-   [poly.web.spec.test-utils :as spec-tu]
    [poly.web.sql.interface :as sql]
-   [poly.web.sql.interface.test-utils :as sql-tu]
+   [poly.web.sql.test-utils :as sql-tu]
    [poly.web.test-utils.interface :as test-utils]
    [poly.web.user.interface :as user]
    [poly.web.user.interface.spec :as user-s]
-   [poly.web.user.interface.test-utils :as user-tu]))
+   [poly.web.user.test-utils :as user-tu]))
 
 (def ^:private service
   "Reference to the HTTP service used during testing"
@@ -53,13 +52,6 @@
 (deftest echo-route--ok-response
   (is (= 200 (:status (response-for @service :get "/api/echo")))))
 
-; TODO: should bricks expose helper functions to make test creation easier?
-; like `poly.web.user.interface.test`?
-;; (comment
-;;   (require '[poly.web.user.interface.test :as user-t])
-;;   (deftest user
-;;     (let [user (gen/generate (s/gen ::user-t/registered-user))])))
-
 (defn- res-for
   "Helper function around `response-for`.
 
@@ -93,8 +85,7 @@
     (user-register--success)))
 
 (deftest user-login--success
-  (let [email (spec-tu/gen-email)
-        user  (user-tu/new-user! (sql-tu/ds) ::user-s/email email)
+  (let [user  (user-tu/new-user! (sql-tu/ds))
         path  (str "/api/users/" (::user-s/id user) "/login")
 
         {:keys [status body]} (res-for :post path :body {:user user})]
@@ -108,8 +99,7 @@
            (json/read-str body)))))
 
 (deftest user-info--forbidden
-  (let [email                      (spec-tu/gen-email)
-        {::user-s/keys [token id]} (user-tu/new-user! (sql-tu/ds) ::user-s/email email)
+  (let [{::user-s/keys [token id]} (user-tu/new-user! (sql-tu/ds))
         {:keys [status body]}      (res-for :get (str "/api/users/" (inc id))
                                             :token token)]
     (is (= 403 status))
@@ -117,11 +107,8 @@
            (json/read-str body)))))
 
 (deftest user-info--success
-  (let [email
-        (spec-tu/gen-email)
-
-        {::user-s/keys [token id name email username]}
-        (user-tu/new-user! (sql-tu/ds) ::user-s/email email)
+  (let [{::user-s/keys [token id name email username]}
+        (user-tu/new-user! (sql-tu/ds))
 
         {:keys [status body]}
         (res-for :get (str "/api/users/" id) :token token)]

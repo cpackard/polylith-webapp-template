@@ -23,8 +23,7 @@
     [spec :as cfg-s]]
    [poly.web.logging
     [core :as log-core]
-    [interface :as log]]
-   [poly.web.logging.interface
+    [interface :as log]
     [test-utils :as log-tu]]
    [poly.web.macros
     [core :as macros-core]
@@ -43,21 +42,21 @@
    [poly.web.sql
     [core :as sql-core]
     [interface :as sql]
-    [migrations :as sql-m]]
+    [migrations :as sql-m]
+    [test-utils :as sql-tu]]
    [poly.web.sql.interface
     [helpers :as sql-h]
-    [spec :as sql-s]
-    [test-utils :as sql-tu]]
+    [spec :as sql-s]]
    [poly.web.test-utils
     [core :as test-utils-core]
     [interface :as test-utils]]
    [poly.web.user
     [core :as user-core]
     [interface :as user]
-    [store :as user-store]]
+    [store :as user-store]
+    [test-utils :as user-tu]]
    [poly.web.user.interface
-    [spec :as user-s]
-    [test-utils :as user-tu]]))
+    [spec :as user-s]]))
 
 (integrant.repl/set-prep!
  (fn [] (cfg/parse-cfgs [(io/resource "rest-api/config.edn")] {:profile :dev})))

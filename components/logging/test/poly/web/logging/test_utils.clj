@@ -1,4 +1,4 @@
-(ns poly.web.logging.interface.test-utils
+(ns poly.web.logging.test-utils
   (:require
    [clojure.pprint :as pp]
    [poly.web.logging.interface :as log]))

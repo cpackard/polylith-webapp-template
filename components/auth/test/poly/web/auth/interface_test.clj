@@ -6,7 +6,7 @@
    [clojure.test :as test :refer [deftest is testing use-fixtures]]
    [expound.alpha :as expound]
    [poly.web.auth.interface :as auth]
-   [poly.web.logging.interface.test-utils :as log-tu]
+   [poly.web.logging.test-utils :as log-tu]
    [poly.web.spec.interface :as spec]))
 
 (defn prep-expound-for-tests

@@ -7,13 +7,13 @@
    [clojure.test :as test :refer [deftest is use-fixtures]]
    [poly.web.auth.interface.spec :as auth-s]
    [poly.web.config.interface :as cfg]
-   [poly.web.logging.interface.test-utils :as log-tu]
+   [poly.web.logging.test-utils :as log-tu]
    [poly.web.spec.test-utils :as spec-tu]
-   [poly.web.sql.interface.test-utils :as sql-tu]
+   [poly.web.sql.test-utils :as sql-tu]
    [poly.web.test-utils.interface :as test-utils]
    [poly.web.user.interface :as user]
    [poly.web.user.interface.spec :as user-s]
-   [poly.web.user.interface.test-utils :as user-tu]))
+   [poly.web.user.test-utils :as user-tu]))
 
 (defn test-resources
   []
