@@ -1,0 +1,1 @@
+{:hooks {:analyze-call {poly.web.macros.interface/some-fn-> hooks.some-fn-arrow/some-fn->}}}
