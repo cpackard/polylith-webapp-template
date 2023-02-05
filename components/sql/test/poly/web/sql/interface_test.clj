@@ -3,11 +3,11 @@
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.test :as test :refer [deftest is testing use-fixtures]]
-   [poly.web.logging.interface.test-utils :as log-tu]
+   [poly.web.logging.test-utils :as log-tu]
    [poly.web.sql.interface :as sql]
    [poly.web.sql.interface.helpers :refer [from select where]]
-   [poly.web.sql.interface.test-utils :as sql-tu]
    [poly.web.sql.migrations :as migrations]
+   [poly.web.sql.test-utils :as sql-tu]
    [poly.web.test-utils.interface :as tu]))
 
 (def ^:private test-db-name "poly_web_sql_interface_test")

@@ -2,7 +2,7 @@
   (:require
    [clojure.test :as test :refer [deftest is testing use-fixtures]]
    [poly.web.logging.interface :as log]
-   [poly.web.logging.interface.test-utils :as log-tu]))
+   [poly.web.logging.test-utils :as log-tu]))
 
 (let [log-cfg {:min-level [[#{"poly.web.log.*"} :trace]]}]
   (use-fixtures :once

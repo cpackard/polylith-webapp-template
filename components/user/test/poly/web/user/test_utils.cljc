@@ -1,8 +1,9 @@
-(ns poly.web.user.interface.test-utils
+(ns poly.web.user.test-utils
   (:require
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as gen]
    [poly.web.config.interface :as cfg]
+   [poly.web.spec.test-utils :as spec-tu]
    [poly.web.user.interface :as user]
    [poly.web.user.interface.spec :as user-s]))
 
@@ -31,7 +32,7 @@
   "Generate a new user and register with the DB for testing"
   [ds & {:as new-user}]
   (let [requ (-> (gen/generate (s/gen ::user/new-user))
-                 (merge new-user))
+                 (merge  {::user-s/email (spec-tu/gen-email)} new-user))
         newu (user/register! requ cfg/default-secret-value ds)]
     (if-let [errors (:errors newu)]
       (throw (ex-info "could not create new user" errors))

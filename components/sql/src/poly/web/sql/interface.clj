@@ -87,7 +87,11 @@
 (defn create-migration!
   "Create a timestamped file for a new DB migration.
 
-  TODO: expand docstring with kwarg options."
+  `name` is the name of the migration.
+  `ns` is the string or symbol that `name` should reside under.
+  `:tx?` is an optional keyword to specify whether the migration
+    should be run inside a transaction (defaults to `true`).
+  "
   [name ns & {:keys [tx?] :or {tx? true} :as opts}]
   (migrations/create-migration! name ns tx? opts))
 

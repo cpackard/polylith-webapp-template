@@ -1,4 +1,4 @@
-(ns poly.web.sql.interface.test-utils
+(ns poly.web.sql.test-utils
   (:require
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
