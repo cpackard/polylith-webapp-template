@@ -18,14 +18,16 @@
                 (expound/expound-str spec-kw user))))
 
 (defn has-email?
-  [{::user-s/keys [email]} ds]
-  (when-not (store/find-by-email email ds)
-    (format-err :email "Invalid email.")))
+  [{::user-s/keys [email] :as user} ds]
+  (if (store/find-by-email email ds)
+    (format-err :email "Invalid email.")
+    user))
 
 (defn password-match?
-  [password user]
-  (when-not (auth/check password (::user-s/password user))
-    (format-err :password "Invalid password.")))
+  [{::user-s/keys [password] :as user} req-password]
+  (if-not (auth/check req-password password)
+    (format-err :password "Invalid password.")
+    user))
 
 (defn existing-email?
   [{::user-s/keys [email] :as user} ds]
