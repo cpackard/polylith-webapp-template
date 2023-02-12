@@ -76,8 +76,11 @@
 (deftest user-register--success
   (let [user (gen/generate (s/gen ::user/new-user))
 
-        {:keys [status]} (res-for :post "/api/users" :body {:user user})]
-    (is (= 200 status))))
+        {:keys [status body headers]} (res-for :post "/api/users" :body {:user user})
+        user-id (-> body json/read-str (get "id"))]
+    (is (= 201 status))
+    (is (= (str "/api/users/" user-id)
+           (get headers "Location")))))
 
 (comment
   (deftest user-register--all
