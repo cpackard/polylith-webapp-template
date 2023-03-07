@@ -21,6 +21,9 @@
     [interface :as cfg]]
    [poly.web.config.interface
     [spec :as cfg-s]]
+   [poly.web.gpg
+    [core :as gpg-core]
+    [interface :as gpg]]
    [poly.web.logging
     [core :as log-core]
     [interface :as log]
