@@ -29,6 +29,8 @@
                               integrant/repl      {:mvn/version "0.3.2"}
                               ;;  Human-optimized error messages for clojure.spec
                               expound/expound     {:mvn/version "0.9.0"}
+                              ;; Simple HTTP requests
+                              clj-http/clj-http   {:mvn/version "3.10.0"}
 
                               ;; Components
                               poly/auth       {:local/root "components/auth"}
