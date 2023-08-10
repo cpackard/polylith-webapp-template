@@ -1,3 +1,5 @@
-((clojure-mode . ((cider-clojure-cli-aliases . ":dev:test:repl/reloaded")))
+((clojure-mode . ((cider-clojure-cli-aliases . ":dev:test:dev/reloaded")
+                  (cider-preferred-build-tool . clojure-cli)
+                  ))
  (nil . ((fill-column . 80)
          (eval . (setenv "TIMBRE_LEVEL" ":info")))))
