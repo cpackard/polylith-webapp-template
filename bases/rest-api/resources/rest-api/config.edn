@@ -1,6 +1,7 @@
 {:poly.web.sql.interface/db-spec {:dbtype   "postgres"
                                   :dbname   "app"
                                   :username "pguser"
+                                  :user     "pguser"
                                   :password "pgpass"
                                   :host     "localhost"
                                   :port     5432}
