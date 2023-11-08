@@ -31,6 +31,8 @@
                                                          default-column-reader)})
         new-pool (-> (connection/->pool HikariDataSource db-spec)
                      (jdbc/with-options opts))]
+    ;; this code initializes the pool and performs a validation check:
+    (.close (jdbc/get-connection new-pool))
     new-pool))
 
 (defn close-pool
