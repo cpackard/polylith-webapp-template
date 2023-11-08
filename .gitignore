@@ -40,3 +40,9 @@ projects/**/pom.xml
 
 # log folder
 logs/
+
+# GPG files
+*.gpg
+
+# Other local files
+development/resources/dev/cpack-gpg.edn
