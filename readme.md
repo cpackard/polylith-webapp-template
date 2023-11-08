@@ -26,6 +26,8 @@ You can also get in touch with the Polylith Team on [Slack](https://clojurians.s
 
 ### Local development
 
+#### Working with the REPL
+
 For local development, there are utility functions included to automatically import a component and its namespaces. For example, to load the components named `sql` and `gpg` you can eval the snippet below from any `dev/your-name.clj` file:
 
 ``` clojure
@@ -35,9 +37,9 @@ For local development, there are utility functions included to automatically imp
   (ws/reqcom gpg sql))
 ```
 
-*TODO: update this.*
-To load all dependencies in the REPL, run the command `cider-jack-in-clj` from the [user.clj](development/src/user.clj) file.
+#### Creating a postgres user
 
+To create a user that can be used for running tests and local development, run the following psql command: `create role pguser with login superuser password 'pgpass';`
 
 ## Structure and organization
 
