@@ -6,11 +6,9 @@ This repo aims to be a batteries-included template for quickly bootstrapping Clo
 
 The end format will be similar to the [Clojure Polylith Realworld Example App](https://github.com/furkan3ayraktar/clojure-polylith-realworld-example-app) but with only the "core" components needed for most web-app functionality: database operations, auth middleware, etc. Check them out for great resource on a fully implemented Polylith codebase. 
 
-`poly-web` is currently in active development (hence the alpha status). Suggestions and/or pull requests for functionality is welcome. 
+`poly-web` is currently in active development (hence the alpha status). Suggestions or pull requests for functionality are welcome!
 
-To load all dependencies in the REPL, run the command `cider-jack-in-clj` from the [user.clj](development/src/user.clj) file.
-
-## Building and Running
+## Building and running
 
 To build the project: `clojure -T:build uberjar :project backend`
 
@@ -26,7 +24,24 @@ The Polylith documentation can be found here:
 
 You can also get in touch with the Polylith Team on [Slack](https://clojurians.slack.com/archives/C013B7MQHJQ).
 
-## Structure and Organization
+### Local development
+
+#### Working with the REPL
+
+For local development, there are utility functions included to automatically import a component and its namespaces. For example, to load the components named `sql` and `gpg` you can eval the snippet below from any `dev/your-name.clj` file:
+
+``` clojure
+#_{:clj-kondo/ignore [:unresolved-symbol]}
+(do
+  (require '[dev.workspace :as ws])
+  (ws/reqcom gpg sql))
+```
+
+#### Creating a postgres user
+
+To create a user that can be used for running tests and local development, run the following psql command: `create role pguser with login superuser password 'pgpass';`
+
+## Structure and organization
 
 The [Polylith architecture docs](https://polylith.gitbook.io/polylith/architecture/2.1.-workspace) provide details about the general organization patterns used here.
 
@@ -35,6 +50,47 @@ Some repo-specific conventions:
 - All components which `require` another component's interface alias it by the component name: `(require '[poly.web.user.interface :as user])`
   - The `logging` component is frequently aliased as `log` for brevity.
 - Component's public specs are organized in the corresponding `interface.spec` namespace and aliased with the "-s" prefix: `(require '[poly.web.user.interface.spec :as user-s])`
+
+### Dependency injection
+
+This repo uses [integrant](https://github.com/weavejester/integrant) to manage dependency injection of stateful resources.
+
+Configurations are defined in each base's `resources/{base}/config.edn` file and use [aero](https://github.com/juxt/aero) tag literals to support multiple environments/profiles. Then in any file in the base's classpath (typically `dependencies.clj`) the integrant multimethods `ig/init-key` and `ig/halt-key!` define how to start and stop the resources from the config.
+
+#### Starting from the application
+
+In the application's `-main` function, the integrant system dependencies can be started like below:
+
+``` clojure
+(require '[poly.web.config.interface :as cfg])
+(-> (io/resource "rest-api/config.edn")
+      (cfg/parse {:profile :default})
+      cfg/init)
+```
+
+#### Development
+
+In your development namespace, you can use the REPL convenience methods `(go)` to start the dependencies, `(halt)` to stop them, and `(reset)` to reload source files and restart dependencies.
+
+``` clojure
+(ns dev.cpack
+  (:require
+   [clojure.java.io :as io]
+   [integrant.core :as ig]
+   [integrant.repl :refer [go halt reset]]
+   [integrant.repl.state :refer [system]]
+   [poly.web.config.interface :as cfg]
+   [poly.web.sql.interface :as sql]))
+
+;; define a zero-argument function that returns a prepped Integrant configuration.
+(integrant.repl/set-prep!
+ (fn [] (cfg/parse-cfgs [(io/resource "dev/cpack.edn")] {:profile :dev})))
+
+(defn get-ds
+  "Retrieve the initialized connection pool from Integrant."
+  []
+  (::sql/db-pool system))
+```
 
 ## Specs
 

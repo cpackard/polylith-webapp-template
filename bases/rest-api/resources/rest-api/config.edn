@@ -1,9 +1,10 @@
 {:poly.web.sql.interface/db-spec {:dbtype   "postgres"
                                   :dbname   "app"
                                   :username "pguser"
+                                  :user     "pguser"
                                   :password "pgpass"
                                   :host     "localhost"
-                                  :port     6432}
+                                  :port     5432}
 
  :poly.web.sql.interface/db-pool {:db-spec #ig/ref :poly.web.sql.interface/db-spec}
 
