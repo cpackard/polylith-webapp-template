@@ -4,6 +4,8 @@
 
                                "components/auth/resources"
                                "components/auth/src"
+                               "components/aws/resources"
+                               "components/aws/src"
                                "components/config/resources"
                                "components/config/src"
                                "components/gpg/src"
@@ -33,6 +35,7 @@
 
                               ;; Components
                               poly/auth       {:local/root "components/auth"}
+                              poly/aws        {:local/root "components/aws"}
                               poly/config     {:local/root "components/config"}
                               poly/gpg        {:local/root "components/gpg"}
                               poly/logging    {:local/root "components/logging"}
@@ -48,6 +51,7 @@
                               cljfmt/cljfmt {:mvn/version "0.9.0"}}}
 
            :test {:extra-paths ["components/auth/test"
+                                "components/aws/test"
                                 "components/config/test"
                                 "components/gpg/test"
                                 "components/logging/test"
