@@ -1,0 +1,11 @@
+{:paths ["src" "resources"]
+ :deps  {com.cognitect.aws/api           {:mvn/version "0.8.686"}
+         com.cognitect.aws/endpoints     {:mvn/version "1.1.12.504"}
+         com.cognitect.aws/s3            {:mvn/version "848.2.1413.0", :aws/serviceFullName "Amazon Simple Storage Service"}
+         com.cognitect.aws/sso           {:mvn/version "847.2.1365.0", :aws/serviceFullName "AWS Single Sign-On"}
+         com.cognitect.aws/sso-oidc      {:mvn/version "847.2.1365.0", :aws/serviceFullName "AWS SSO OIDC"}
+         com.cognitect.aws/iam           {:mvn/version "848.2.1413.0", :aws/serviceFullName "AWS Identity and Access Management"}
+         com.cognitect.aws/identitystore {:mvn/version "811.2.958.0", :aws/serviceFullName "AWS SSO Identity Store"}}
+
+ :aliases {:test {:extra-paths ["test"]
+                  :extra-deps  {}}}}
